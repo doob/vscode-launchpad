@@ -43,7 +43,7 @@
           "description": "Restrict which tools Claude can use. Each entry is a tool name or pattern (e.g. \"Bash(git:*)\").",
           "items": {
             "type": "string",
-            "examples": ["Bash(git:*)", "Bash(npm:*)", "Read", "Edit", "Write", "Glob", "Grep"]
+            "examples": ["Bash(git:*)", "Bash(bun:*)", "Read", "Edit", "Write", "Glob", "Grep"]
           }
         },
         "environmentVariables": {
@@ -350,7 +350,7 @@
         },
         "command": {
           "type": "string",
-          "description": "Shell command to execute (e.g. \"npm run dev\", \"pytest\")."
+          "description": "Shell command to execute (e.g. \"bun run dev\", \"pytest\")."
         },
         "cwd": {
           "type": "string",

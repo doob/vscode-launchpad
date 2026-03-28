@@ -403,7 +403,7 @@ export class EditorWebviewProvider implements vscode.WebviewViewProvider {
       <details class="section">
         <summary>Scripts</summary>
         <div class="fields">
-          <button class="add-btn" onclick="addItem('[\\"scripts\\"]', '{\\"label\\":\\"New Script\\",\\"command\\":\\"npm run dev\\"}')">+ Add Script</button>
+          <button class="add-btn" onclick="addItem('[\\"scripts\\"]', '{\\"label\\":\\"New Script\\",\\"command\\":\\"bun run dev\\"}')">+ Add Script</button>
         </div>
       </details>`;
     }
@@ -431,7 +431,7 @@ export class EditorWebviewProvider implements vscode.WebviewViewProvider {
       <summary>Scripts (${config.scripts.length})</summary>
       <div class="fields">
         ${items}
-        <button class="add-btn" onclick="addItem('[\\"scripts\\"]', '{\\"label\\":\\"New Script\\",\\"command\\":\\"npm run dev\\"}')">+ Add Script</button>
+        <button class="add-btn" onclick="addItem('[\\"scripts\\"]', '{\\"label\\":\\"New Script\\",\\"command\\":\\"bun run dev\\"}')">+ Add Script</button>
       </div>
     </details>`;
   }

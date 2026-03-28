@@ -826,7 +826,7 @@ apis:
 # Pre-launch hooks — commands to run before Claude starts
 # hooks:
 #   preLaunch:
-#     - command: "npm run migrate"
+#     - command: "bun run migrate"
 #       timeout: 60000
 
 # Custom sections — any additional context for Claude
@@ -1592,7 +1592,7 @@ async function addItem(item?: EnvTreeItem) {
       if (!label) { return; }
       const command = await vscode.window.showInputBox({
         prompt: "Shell command",
-        placeHolder: "npm run dev",
+        placeHolder: "bun run dev",
       });
       if (!command) { return; }
       template = { label, command };
@@ -1602,7 +1602,7 @@ async function addItem(item?: EnvTreeItem) {
     case "group-hooks": {
       const command = await vscode.window.showInputBox({
         prompt: "Hook command",
-        placeHolder: "npm run migrate",
+        placeHolder: "bun run migrate",
       });
       if (!command) { return; }
       template = { command };

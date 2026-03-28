@@ -68,7 +68,7 @@ hooks:
   preLaunch:
     - command: "docker compose up -d"
       continueOnError: true
-    - command: "npm run migrate"
+    - command: "bun run migrate"
       timeout: 60000
 ```
 
@@ -89,10 +89,10 @@ Define and run project scripts directly from the sidebar:
 ```yaml
 scripts:
   - label: "Dev Server"
-    command: "npm run dev"
+    command: "bun run dev"
     split: true           # opens in a split terminal
   - label: "Seed Database"
-    command: "npm run seed"
+    command: "bun run seed"
     cwd: "./backend"
 ```
 
@@ -225,7 +225,7 @@ docker:
 
 scripts:
   - label: "Dev Server"
-    command: "npm run dev"
+    command: "bun run dev"
     cwd: "./backend"
     split: true
 
@@ -276,8 +276,8 @@ code --install-extension doob.launchpad
 ```bash
 git clone https://github.com/doob/vscode-launchpad.git
 cd vscode-launchpad
-npm install
-npm run package
+bun install
+bun run package
 code --install-extension launchpad-*.vsix
 ```
 

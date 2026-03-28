@@ -133,7 +133,7 @@ export interface EnvironmentConfig {
   /** Docker Compose services required by this environment */
   docker?: DockerConfig;
 
-  /** Runnable scripts (e.g. "pnpm dev", "npm run build") */
+  /** Runnable scripts (e.g. "bun dev", "bun run build") */
   scripts?: ScriptConfig[];
 
   /** Lifecycle hooks */
