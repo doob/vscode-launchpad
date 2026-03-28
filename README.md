@@ -10,15 +10,7 @@ No more copy-pasting connection strings. No more forgetting which account to use
 
 ## Getting Started
 
-### Install from Marketplace
-
-Search for **"Launchpad"** in the VS Code Extensions view, or install from the command line:
-
-```bash
-code --install-extension doob.launchpad
-```
-
-### Install from Source
+### Install
 
 ```bash
 git clone https://github.com/doob/vscode-launchpad.git
