@@ -4,6 +4,14 @@ All notable changes to the **Launchpad** extension will be documented in this fi
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] - 2026-03-28
+
+### Changed
+- Switched from npm to bun as the project package manager
+- Updated all build scripts, examples, and documentation to use bun/bunx
+- Moved Getting Started section to top of README for better discoverability
+- Removed marketplace install instructions (not yet published)
+
 ## [0.6.1] - 2026-03-28
 
 ### Added
