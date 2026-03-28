@@ -7,7 +7,7 @@ description: "Package the Launchpad VS Code extension. Use this skill when the u
 
 This skill handles versioning, changelog updates, and packaging for the Launchpad extension.
 
-> **Note:** Marketplace publishing is not yet set up. The release flow ends at packaging + git tag. When marketplace publishing is ready, re-add a publish step.
+> **Note:** Marketplace publishing is not yet set up. Releases are distributed as `.vsix` files attached to GitHub Releases.
 
 ## Usage
 
@@ -92,18 +92,40 @@ git commit -m "release: v<version>"
 git tag "v<version>"
 ```
 
-Ask the user if they want to push:
+Push the commit and tag:
 ```bash
 git push && git push --tags
 ```
 
-### 6. Summary
+### 6. Create GitHub Release
+
+Create a GitHub release with the `.vsix` attached. Use the changelog entry for the release notes:
+
+```bash
+gh release create "v<version>" launchpad-<version>.vsix \
+  --title "v<version>" \
+  --notes "<changelog entry for this version>"
+```
+
+The `--notes` body should include the changelog sections (Added, Changed, Fixed, etc.) formatted in markdown. Also include an install instruction at the bottom:
+
+```markdown
+## Install
+
+Download `launchpad-<version>.vsix` and run:
+\`\`\`bash
+code --install-extension launchpad-<version>.vsix
+\`\`\`
+```
+
+### 7. Summary
 
 Report back:
 - Previous version → new version
 - Changelog entry (abbreviated)
 - .vsix file path and size
 - Git tag created
+- GitHub release URL
 - Whether changes were pushed
 
 ## Error Handling

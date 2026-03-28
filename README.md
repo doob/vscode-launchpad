@@ -12,6 +12,14 @@ No more copy-pasting connection strings. No more forgetting which account to use
 
 ### Install
 
+Download the latest `.vsix` from [GitHub Releases](https://github.com/doob/vscode-launchpad/releases) and run:
+
+```bash
+code --install-extension launchpad-*.vsix
+```
+
+Or build from source:
+
 ```bash
 git clone https://github.com/doob/vscode-launchpad.git
 cd vscode-launchpad
@@ -19,8 +27,6 @@ bun install
 bun run package
 code --install-extension launchpad-*.vsix
 ```
-
-Or open the folder in VS Code and press **F5** to launch in debug mode.
 
 ### Create Your First Environment
 
