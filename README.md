@@ -1,18 +1,16 @@
-# Launchpad
+# Launchpad — VS Code Extension for Claude Code
 
 [![Version](https://img.shields.io/visual-studio-marketplace/v/doob.launchpad)](https://marketplace.visualstudio.com/items?itemName=doob.launchpad)
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/doob.launchpad)](https://marketplace.visualstudio.com/items?itemName=doob.launchpad)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Launch fully-configured Claude Code sessions with one click.** Define databases, credentials, API endpoints, MCP servers, scripts, and system prompts in YAML -- then select an environment from the sidebar and go.
+VS Code extension that manages environment configurations for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions. Define databases, credentials, API endpoints, MCP servers, scripts, and system prompts in YAML files — then launch a configured `claude` CLI session from the sidebar.
 
-No more copy-pasting connection strings. No more forgetting which account to use. No more manually setting up MCP servers. Launchpad gives Claude the full context of your environment so you can start working immediately.
+![Launchpad sidebar showing environments](images/screenshot-sidebar.png)
 
-## Getting Started
+## Install
 
-### Install
-
-Download the latest `.vsix` from [GitHub Releases](https://github.com/doob/vscode-launchpad/releases) and run:
+Download the latest `.vsix` from [GitHub Releases](https://github.com/doob/vscode-launchpad/releases):
 
 ```bash
 code --install-extension launchpad-*.vsix
@@ -28,36 +26,33 @@ bun run package
 code --install-extension launchpad-*.vsix
 ```
 
-### Create Your First Environment
+### Requirements
 
-1. Open the Command Palette and run **Launchpad: Create New Environment**
-2. Enter a name (e.g., "Local Dev")
-3. Edit the generated YAML in `.launchpad/local-dev.yaml`
-4. Click the play button next to the environment in the sidebar
+- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) on your PATH
+- VS Code 1.85+
 
-### Quick Start from .env
+### Optional
 
-Already have a `.env` file? Run **Launchpad: Import from .env** to generate a starter environment YAML automatically.
+- [YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) — autocomplete and validation for `.launchpad/*.yaml` files
+- [1Password CLI](https://1password.com/downloads/command-line/) — for `op://` secret references
+- [GitHub CLI](https://cli.github.com/) — for PR number detection in terminal tabs
+- [Docker](https://www.docker.com/) — for Docker Compose integration
 
 ## How It Works
 
 1. Create YAML files in `.launchpad/` describing your environments
-2. Pick one from the sidebar and click **Launch Session**
-3. The extension runs `claude` in a VS Code terminal with `--append-system-prompt` containing your full environment context -- databases, credentials, APIs, variables, and any custom instructions
-
-Claude starts every session knowing exactly where it is, what it can access, and how things are set up.
+2. Select an environment from the Launchpad sidebar panel
+3. Click **Launch Session** — the extension opens a VS Code terminal running `claude` with `--append-system-prompt` containing your environment context (databases, credentials, APIs, variables, custom instructions)
 
 ## Features
 
-### Sidebar Environment Panel
+### Sidebar Panel
 
-Browse all environments in a dedicated sidebar. Each environment expands to show its databases, accounts, APIs, variables, MCP servers, scripts, and hooks. Launch, edit, duplicate, or health-check any environment directly from the tree view.
-
-<!-- ![Sidebar screenshot](images/screenshot-sidebar.png) -->
+Environments are listed in a dedicated sidebar. Each one expands into a tree showing its databases, accounts, APIs, variables, MCP servers, scripts, and hooks. Right-click for actions like launch, edit, duplicate, and health check.
 
 ### Secret Resolution
 
-Passwords and sensitive values support references that are resolved at launch time only -- secrets are never written to disk:
+Secret references are resolved at launch time — values are not written to disk.
 
 | Format | Source |
 |--------|--------|
@@ -71,12 +66,12 @@ databases:
   - label: "Production DB"
     type: postgres
     host: db.example.com
-    password: "op://Engineering/DB/password"  # resolved at launch
+    password: "op://Engineering/DB/password"
 ```
 
-### Per-Environment MCP Servers
+### MCP Servers
 
-Each environment can define its own MCP servers. Launchpad writes a temporary config and passes it to Claude via `--mcp-config`:
+Each environment can define MCP servers. A temporary config is written and passed to Claude via `--mcp-config`:
 
 ```yaml
 mcpServers:
@@ -92,7 +87,7 @@ mcpServers:
 
 ### Pre-Launch Hooks
 
-Run setup commands before Claude starts. A progress notification shows execution status. The launch aborts on failure unless `continueOnError` is set:
+Commands that run before the Claude session starts. The launch aborts on failure unless `continueOnError` is set:
 
 ```yaml
 hooks:
@@ -105,31 +100,31 @@ hooks:
 
 ### Health Checks
 
-Right-click an environment and select **Health Check** to verify connectivity before launching:
+Right-click an environment and select **Health Check** to test connectivity:
 
-- **Databases** -- TCP socket connect (Redis gets a PING/PONG check)
-- **APIs** -- HTTP HEAD request
-- **Docker** -- Container status check
+- **Databases** — TCP socket connect (Redis gets a PING/PONG check)
+- **APIs** — HTTP HEAD request
+- **Docker** — container status check
 
-Results appear in the "Launchpad Health" output panel with pass/fail and latency.
+Results appear in the "Launchpad Health" output panel.
 
 ### Scripts
 
-Define and run project scripts directly from the sidebar:
+Run project scripts from the sidebar:
 
 ```yaml
 scripts:
   - label: "Dev Server"
     command: "bun run dev"
-    split: true           # opens in a split terminal
+    split: true
   - label: "Seed Database"
     command: "bun run seed"
     cwd: "./backend"
 ```
 
-### Docker Compose Integration
+### Docker Compose
 
-Automatically manage Docker services when launching an environment:
+Start Docker services on launch and optionally wait for healthy status:
 
 ```yaml
 docker:
@@ -140,34 +135,16 @@ docker:
   waitTimeout: 60
 ```
 
-### Smart Terminal Tabs
+### Terminal Tabs
 
-Terminal tabs show the environment name plus live git context:
+Terminal tabs show the environment name and git context:
 
 ```
 Claude: Staging [PR#87 - JIRA-123]
 Claude: Local Dev [wt:hotfix - fix-auth]
 ```
 
-- Auto-detected icons per environment type (warning for prod, beaker for staging, tools for dev)
-- Dynamic updates when you switch branches
-- PR number lookup via GitHub CLI
-- Customizable via `icon` and `tabName` in the YAML
-
-### Copy Credentials
-
-Right-click any database or account in the tree:
-
-- **Copy Connection String** -- builds `postgres://user:pass@host:port/db`
-- **Copy Username / Copy Password**
-
-### Import from .env
-
-Import an existing `.env` file to scaffold an environment YAML. Auto-detects:
-
-- Secret-looking keys (`PASSWORD`, `TOKEN`, `KEY`, etc.) marked as `secret: true`
-- `DATABASE_URL` parsed into a `databases:` entry
-- `API_URL` / `BASE_URL` parsed into `apis:` entries
+Icons are auto-detected per environment type. PR numbers are looked up via GitHub CLI. Customizable via `icon` and `tabName` in the YAML.
 
 ### Claude CLI Flags
 
@@ -185,9 +162,17 @@ claude:
     DEBUG: "true"
 ```
 
+### Import from .env
+
+Generate an environment YAML from an existing `.env` file. Auto-detects `DATABASE_URL` (parsed into `databases:`), `API_URL`/`BASE_URL` (parsed into `apis:`), and secret-looking keys (`PASSWORD`, `TOKEN`, `KEY`) marked as `secret: true`.
+
 ### Inline Editing
 
-Edit environment values directly from the sidebar tree view -- no need to open the YAML file. Add or remove databases, variables, accounts, and more from the context menu.
+Edit environment values directly from the sidebar tree view. Add or remove databases, variables, accounts, and more from the context menu.
+
+### Copy Credentials
+
+Right-click any database or account in the tree to copy connection strings, usernames, or passwords.
 
 ## Environment YAML Schema
 
@@ -197,7 +182,7 @@ Full reference for `.launchpad/*.yaml` files:
 name: "staging"
 description: "Staging environment"
 icon: "beaker"                      # VS Code codicon name (optional)
-tabName: "Staging API"              # Custom terminal tab name (optional)
+tabName: "Staging API"              # custom terminal tab name (optional)
 
 claude:
   dangerouslySkipPermissions: false
@@ -215,11 +200,11 @@ variables:
     value: "staging"
   - name: API_KEY
     value: "op://vault/item/key"
-    secret: true                    # resolved at launch, never logged
+    secret: true
 
 databases:
   - label: "App DB"
-    type: postgres                  # postgres, mysql, redis, mongo, etc.
+    type: postgres
     host: staging-db.example.com
     port: 5432
     database: myapp
@@ -266,14 +251,14 @@ hooks:
       continueOnError: true
       timeout: 30000
 
-sections:                           # freeform markdown sections
+sections:
   Deployment: |
     Branch `develop` auto-deploys to staging.
 ```
 
 ## Commands
 
-All commands are available from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`):
+Available from the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`):
 
 | Command | Description |
 |---------|-------------|
@@ -291,18 +276,6 @@ All commands are available from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `launchpad.environmentsDir` | `.launchpad` | Directory for environment YAML files (relative to workspace root) |
-
-## Requirements
-
-- **[Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)** installed and on your PATH
-- **VS Code 1.85** or later
-
-### Optional
-
-- [YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) -- enables autocomplete, validation, and hover docs in `.launchpad/*.yaml` files
-- [1Password CLI](https://1password.com/downloads/command-line/) -- for `op://` secret references
-- [GitHub CLI](https://cli.github.com/) -- for PR number detection in terminal tabs
-- [Docker](https://www.docker.com/) -- for Docker Compose integration
 
 ## License
 
