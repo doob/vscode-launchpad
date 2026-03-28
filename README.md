@@ -8,6 +8,39 @@
 
 No more copy-pasting connection strings. No more forgetting which account to use. No more manually setting up MCP servers. Launchpad gives Claude the full context of your environment so you can start working immediately.
 
+## Getting Started
+
+### Install from Marketplace
+
+Search for **"Launchpad"** in the VS Code Extensions view, or install from the command line:
+
+```bash
+code --install-extension doob.launchpad
+```
+
+### Install from Source
+
+```bash
+git clone https://github.com/doob/vscode-launchpad.git
+cd vscode-launchpad
+bun install
+bun run package
+code --install-extension launchpad-*.vsix
+```
+
+Or open the folder in VS Code and press **F5** to launch in debug mode.
+
+### Create Your First Environment
+
+1. Open the Command Palette and run **Launchpad: Create New Environment**
+2. Enter a name (e.g., "Local Dev")
+3. Edit the generated YAML in `.launchpad/local-dev.yaml`
+4. Click the play button next to the environment in the sidebar
+
+### Quick Start from .env
+
+Already have a `.env` file? Run **Launchpad: Import from .env** to generate a starter environment YAML automatically.
+
 ## How It Works
 
 1. Create YAML files in `.launchpad/` describing your environments
@@ -260,39 +293,6 @@ All commands are available from the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `launchpad.environmentsDir` | `.launchpad` | Directory for environment YAML files (relative to workspace root) |
-
-## Getting Started
-
-### Install from Marketplace
-
-Search for **"Launchpad"** in the VS Code Extensions view, or install from the command line:
-
-```bash
-code --install-extension doob.launchpad
-```
-
-### Install from Source
-
-```bash
-git clone https://github.com/doob/vscode-launchpad.git
-cd vscode-launchpad
-bun install
-bun run package
-code --install-extension launchpad-*.vsix
-```
-
-Or open the folder in VS Code and press **F5** to launch in debug mode.
-
-### Create Your First Environment
-
-1. Open the Command Palette and run **Launchpad: Create New Environment**
-2. Enter a name (e.g., "Local Dev")
-3. Edit the generated YAML in `.launchpad/local-dev.yaml`
-4. Click the play button next to the environment in the sidebar
-
-### Quick Start from .env
-
-Already have a `.env` file? Run **Launchpad: Import from .env** to generate a starter environment YAML automatically.
 
 ## Requirements
 
