@@ -1,21 +1,21 @@
 ---
 name: release
-description: "Package and publish the Launchpad VS Code extension. Use this skill when the user says /release, wants to bump the version, publish to the marketplace, create a release, package a .vsix, or prepare a new version of the extension."
+description: "Package the Launchpad VS Code extension. Use this skill when the user says /release, wants to bump the version, package a .vsix, or prepare a new version of the extension."
 ---
 
 # Release — Launchpad VS Code Extension
 
-This skill handles versioning, changelog updates, packaging, and publishing for the Launchpad extension.
+This skill handles versioning, changelog updates, and packaging for the Launchpad extension.
+
+> **Note:** Marketplace publishing is not yet set up. The release flow ends at packaging + git tag. When marketplace publishing is ready, re-add a publish step.
 
 ## Usage
 
 ```
 /release              → interactive: ask what kind of release (patch/minor/major)
-/release patch        → bump patch, update changelog, package, and publish
+/release patch        → bump patch, update changelog, package
 /release minor        → bump minor version
 /release major        → bump major version
-/release --dry-run    → do everything except the actual publish
-/release --package    → only produce the .vsix file, skip publishing
 ```
 
 ## Release Flow
@@ -82,21 +82,9 @@ This produces `launchpad-<version>.vsix` in the project root. The `--no-dependen
 
 Verify the .vsix was created and report its file size.
 
-### 5. Publish (unless --dry-run or --package)
+### 5. Git commit and tag
 
-```bash
-bunx @vscode/vsce publish --no-dependencies
-```
-
-This requires a Personal Access Token (PAT) for the VS Code Marketplace. If publishing fails due to auth:
-- Tell the user to run: `bunx @vscode/vsce login doob`
-- Or set the `VSCE_PAT` environment variable
-
-**Do not proceed with publish without confirming with the user first.** Publishing is irreversible — a version number cannot be reused once published.
-
-### 6. Git commit and tag
-
-After a successful publish (or after packaging if `--package`):
+After packaging:
 
 ```bash
 git add package.json CHANGELOG.md
@@ -109,13 +97,12 @@ Ask the user if they want to push:
 git push && git push --tags
 ```
 
-### 7. Summary
+### 6. Summary
 
 Report back:
 - Previous version → new version
 - Changelog entry (abbreviated)
 - .vsix file path and size
-- Whether it was published or dry-run
 - Git tag created
 - Whether changes were pushed
 
@@ -123,5 +110,3 @@ Report back:
 
 - **Dirty working tree**: warn the user and list the uncommitted changes. Ask if they want to proceed anyway (changes will be included in the release commit) or if they'd rather commit first.
 - **Lint/build failure**: stop immediately, show the errors, and help fix them.
-- **Publish auth failure**: guide the user to authenticate with `vsce login` or set `VSCE_PAT`.
-- **Network failure during publish**: the .vsix is already built locally, so nothing is lost. The user can retry with `bunx @vscode/vsce publish --packagePath launchpad-<version>.vsix`.
