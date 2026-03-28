@@ -9,12 +9,12 @@ A VS Code extension ("Launchpad") that manages predefined environment configs fo
 ## Build & Development
 
 ```bash
-npm install                  # install dependencies
-npm run build                # esbuild bundle → dist/extension.js
-npm run compile              # tsc type-check → out/
-npm run watch                # tsc in watch mode
-npm run lint                 # eslint
-npm run package              # produce .vsix for installation
+bun install                  # install dependencies
+bun run build                # esbuild bundle → dist/extension.js
+bun run compile              # tsc type-check → out/
+bun run watch                # tsc in watch mode
+bun run lint                 # eslint
+bun run package              # produce .vsix for installation
 ```
 
 Press **F5** in VS Code to launch the Extension Development Host for debugging.

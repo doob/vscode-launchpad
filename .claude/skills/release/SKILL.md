@@ -32,16 +32,16 @@ git status --porcelain
 git branch --show-current
 
 # Node modules installed
-test -d node_modules || npm install
+test -d node_modules || bun install
 
 # vsce available
-npx @vscode/vsce --version
+bunx @vscode/vsce --version
 
 # Lint passes
-npm run lint
+bun run lint
 
 # Build succeeds (this also runs via vscode:prepublish)
-npm run build
+bun run build
 ```
 
 If lint or build fails, stop and fix the issues before continuing. Do not skip these checks.
@@ -54,9 +54,9 @@ Read the current version from `package.json`. If the user specified patch/minor/
 - **minor** (0.6.0 → 0.7.0): new features, meaningful changes
 - **major** (0.6.0 → 1.0.0): breaking changes, major milestones
 
-Bump the version using npm:
+Bump the version:
 ```bash
-npm version <patch|minor|major> --no-git-tag-version
+bun version <patch|minor|major> --no-git-tag-version
 ```
 
 The `--no-git-tag-version` flag is important — we handle the git commit and tag ourselves after updating the changelog.
@@ -75,7 +75,7 @@ The changelog follows [Keep a Changelog](https://keepachangelog.com/) format. Ma
 ### 4. Package the .vsix
 
 ```bash
-npx @vscode/vsce package --no-dependencies
+bunx @vscode/vsce package --no-dependencies
 ```
 
 This produces `launchpad-<version>.vsix` in the project root. The `--no-dependencies` flag is used because the extension bundles everything via esbuild (the only runtime dependency `yaml` is included in the bundle).
@@ -85,11 +85,11 @@ Verify the .vsix was created and report its file size.
 ### 5. Publish (unless --dry-run or --package)
 
 ```bash
-npx @vscode/vsce publish --no-dependencies
+bunx @vscode/vsce publish --no-dependencies
 ```
 
 This requires a Personal Access Token (PAT) for the VS Code Marketplace. If publishing fails due to auth:
-- Tell the user to run: `npx @vscode/vsce login doob`
+- Tell the user to run: `bunx @vscode/vsce login doob`
 - Or set the `VSCE_PAT` environment variable
 
 **Do not proceed with publish without confirming with the user first.** Publishing is irreversible — a version number cannot be reused once published.
@@ -124,4 +124,4 @@ Report back:
 - **Dirty working tree**: warn the user and list the uncommitted changes. Ask if they want to proceed anyway (changes will be included in the release commit) or if they'd rather commit first.
 - **Lint/build failure**: stop immediately, show the errors, and help fix them.
 - **Publish auth failure**: guide the user to authenticate with `vsce login` or set `VSCE_PAT`.
-- **Network failure during publish**: the .vsix is already built locally, so nothing is lost. The user can retry with `npx @vscode/vsce publish --packagePath launchpad-<version>.vsix`.
+- **Network failure during publish**: the .vsix is already built locally, so nothing is lost. The user can retry with `bunx @vscode/vsce publish --packagePath launchpad-<version>.vsix`.

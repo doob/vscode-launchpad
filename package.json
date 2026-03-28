@@ -426,14 +426,14 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run build",
+    "vscode:prepublish": "bun run build",
     "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
-    "dev": "npm run build && npx @vscode/vsce package --no-dependencies -o launchpad-dev.vsix && code --install-extension launchpad-dev.vsix --force && rm launchpad-dev.vsix",
+    "dev": "bun run build && bunx @vscode/vsce package --no-dependencies -o launchpad-dev.vsix && code --install-extension launchpad-dev.vsix --force && rm launchpad-dev.vsix",
     "compile": "tsc -p ./",
     "watch": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
     "watch:tsc": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
-    "package": "npx @vscode/vsce package"
+    "package": "bunx @vscode/vsce package"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
