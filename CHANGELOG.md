@@ -4,6 +4,13 @@ All notable changes to the **Launchpad** extension will be documented in this fi
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.1] - 2026-03-28
+
+### Changed
+- Rewrote README for clarity and conciseness
+- Added sidebar screenshot to README
+- Reorganized README sections (install and requirements moved to top)
+
 ## [0.7.0] - 2026-03-28
 
 ### Changed

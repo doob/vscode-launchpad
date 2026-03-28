@@ -2,7 +2,7 @@
   "name": "launchpad",
   "displayName": "Launchpad",
   "description": "Manage dev environments, scripts, and sessions — switch context, credentials, and system prompts with one click.",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "publisher": "doob",
   "license": "MIT",
   "repository": {
