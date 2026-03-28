@@ -4,6 +4,11 @@ All notable changes to the **Launchpad** extension will be documented in this fi
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.6.1] - 2026-03-28
+
+### Added
+- Release skill for streamlined extension packaging and publishing
+
 ## [0.6.0] - 2026-03-28
 
 ### Added

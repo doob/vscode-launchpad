@@ -2,7 +2,7 @@
   "name": "launchpad",
   "displayName": "Launchpad",
   "description": "Manage dev environments, scripts, and sessions — switch context, credentials, and system prompts with one click.",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "publisher": "doob",
   "license": "MIT",
   "repository": {
@@ -289,7 +289,6 @@
           "when": "view == launchpad.environmentList && viewItem == script-running",
           "group": "1_actions@1"
         },
-
         {
           "command": "launchpad.editTreeItem",
           "when": "view == launchpad.environmentList && viewItem =~ /^(editable-|db-item|account-item|api-item|variable-item|mcp-item|hook-item|script-item)/",
