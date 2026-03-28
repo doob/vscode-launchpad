@@ -1,0 +1,104 @@
+name: "Local Dev"
+description: "Local development environment using Docker Compose services."
+icon: "tools"
+tabName: "Dev"
+
+claude:
+  dangerouslySkipPermissions: true
+  # model: "claude-sonnet-4-6"
+  allowedTools:
+    - "Bash(git:*)"
+    - "Bash(npm:*)"
+    - "Read"
+    - "Edit"
+    - "Write"
+  environmentVariables:
+    DEBUG: "true"
+    LOG_LEVEL: "verbose"
+
+systemPrompt: |
+  You are working in a local development environment.
+  All services run via Docker Compose.
+  Feel free to reset databases, restart services, and experiment.
+
+variables:
+  - name: NODE_ENV
+    value: "development"
+  - name: DEBUG
+    value: "*"
+  - name: API_BASE_URL
+    value: "http://localhost:3000"
+
+databases:
+  - label: "Local Postgres"
+    type: postgres
+    host: localhost
+    port: 5432
+    database: myapp_dev
+    username: postgres
+    password: "postgres"
+    connectionString: "postgresql://postgres:postgres@localhost:5432/myapp_dev"
+    notes: "Run 'docker compose up db' to start"
+
+  - label: "Local Redis"
+    type: redis
+    host: localhost
+    port: 6379
+    database: "0"
+    notes: "Used for session cache and job queue"
+
+accounts:
+  - label: "Seed Admin"
+    username: admin@localhost
+    password: "password"
+    role: admin
+  - label: "Seed User"
+    username: user@localhost
+    password: "password"
+    role: user
+
+apis:
+  - label: "Local API"
+    url: "http://localhost:3000/api"
+    notes: "Start with 'npm run dev'"
+
+mcpServers:
+  - name: "postgres"
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-postgres", "postgresql://postgres:postgres@localhost/myapp_dev"]
+
+docker:
+  composeFile: "docker-compose.yml"
+  services: ["db", "redis"]
+  upOnLaunch: true
+  downOnExit: false
+  build: false
+  waitHealthy: true
+  waitTimeout: 60
+
+scripts:
+  - label: "Dev Server"
+    command: "npm run dev"
+    split: true
+  - label: "Run Migrations"
+    command: "npm run migrate"
+    cwd: "./backend"
+  - label: "Seed Database"
+    command: "npm run seed"
+
+hooks:
+  preLaunch:
+    - command: "docker compose up -d db redis"
+      continueOnError: true
+    - command: "npm run migrate"
+      timeout: 30000
+      continueOnError: true
+
+sections:
+  Getting Started: |
+    ```bash
+    docker compose up -d
+    npm run migrate
+    npm run seed
+    npm run dev
+    ```

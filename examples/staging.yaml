@@ -1,0 +1,111 @@
+name: "Staging"
+description: "Staging environment — mirrors production but with test data."
+icon: "beaker"
+tabName: "Staging API"
+
+claude:
+  dangerouslySkipPermissions: false
+  # model: "claude-opus-4-6"
+  allowedTools:
+    - "Bash(git:*)"
+    - "Read"
+    - "Edit"
+  environmentVariables:
+    DEPLOY_ENV: "staging"
+
+systemPrompt: |
+  You are working in the STAGING environment.
+  This environment mirrors production but uses test data.
+  You may run migrations and seed scripts freely.
+  Never point any tool at production hosts from this environment.
+
+variables:
+  - name: NODE_ENV
+    value: "staging"
+  - name: API_BASE_URL
+    value: "https://staging-api.example.com"
+  - name: STRIPE_KEY
+    value: "op://Engineering/Stripe Staging/secret-key"
+    secret: true
+
+databases:
+  - label: "App Database"
+    type: postgres
+    host: staging-db.internal.example.com
+    port: 5432
+    database: myapp_staging
+    username: myapp_staging
+    password: "op://Engineering/Staging DB/password"
+    connectionString: "postgresql://myapp_staging:pass@staging-db.internal.example.com:5432/myapp_staging"
+    notes: "Read replicas available at staging-db-ro.internal.example.com"
+
+  - label: "Redis Cache"
+    type: redis
+    host: staging-redis.internal.example.com
+    port: 6379
+    database: "0"
+    notes: "Flush freely — no persistent data"
+
+accounts:
+  - label: "Admin"
+    username: admin@staging.example.com
+    password: "op://Engineering/Staging Admin/password"      # 1Password CLI
+    role: admin
+    notes: "Full access, can manage users"
+  - label: "Test Customer"
+    username: customer@staging.example.com
+    password: "env://.env.staging/CUSTOMER_PASSWORD"          # .env file lookup
+    role: customer
+    notes: "Has active subscription, test card 4242..."
+  - label: "API Service Account"
+    username: svc-api@staging.example.com
+    password: "keychain://staging-api/svc-api"               # macOS Keychain
+    role: service
+    notes: "Used for machine-to-machine auth"
+  - label: "QA Tester"
+    username: qa@staging.example.com
+    password: "$STAGING_QA_PASS"                              # OS environment variable
+    role: tester
+
+apis:
+  - label: "REST API"
+    url: "https://staging-api.example.com/v2"
+    auth: "Bearer token from /auth/login"
+  - label: "GraphQL"
+    url: "https://staging-api.example.com/graphql"
+    notes: "Playground available at /graphql with introspection enabled"
+
+mcpServers:
+  - name: "postgres"
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-postgres", "postgresql://myapp_staging:pass@staging-db.internal.example.com/myapp_staging"]
+  - name: "sentry"
+    command: "npx"
+    args: ["-y", "@sentry/mcp-server"]
+    env:
+      SENTRY_AUTH_TOKEN: "op://Engineering/Sentry/auth-token"
+
+scripts:
+  - label: "Tail Logs"
+    command: "ssh staging 'tail -f /var/log/myapp/app.log'"
+    split: true
+  - label: "Run Smoke Tests"
+    command: "npm run test:smoke -- --env=staging"
+    cwd: "./tests"
+
+hooks:
+  preLaunch:
+    - command: "echo 'Checking VPN connection...' && ping -c1 staging-db.internal.example.com"
+      timeout: 5000
+      continueOnError: true
+
+sections:
+  Deployment: |
+    - Branch: `develop` auto-deploys to staging
+    - CI/CD: GitHub Actions → AWS ECS
+    - Logs: CloudWatch log group `/ecs/myapp-staging`
+
+  Known Differences from Production: |
+    - Email sending is disabled; all emails go to Mailhog at staging-mail.internal.example.com
+    - Stripe is in test mode
+    - OAuth providers use sandbox/test apps

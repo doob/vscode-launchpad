@@ -1,0 +1,393 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Launchpad Environment",
+  "description": "Configuration file for a Launchpad environment. Defines databases, credentials, APIs, MCP servers, scripts, hooks, and system prompts for Claude Code sessions.",
+  "type": "object",
+  "required": ["name"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Display name for this environment (e.g. \"Local Dev\", \"Staging\")."
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description shown in the sidebar and quick-pick menu."
+    },
+    "icon": {
+      "type": "string",
+      "description": "VS Code codicon name for the sidebar icon (e.g. \"tools\", \"beaker\", \"warning\", \"cloud\"). See https://code.visualstudio.com/api/references/icons-in-labels for the full list.",
+      "examples": ["tools", "beaker", "warning", "cloud", "server", "database", "globe", "shield"]
+    },
+    "tabName": {
+      "type": "string",
+      "description": "Custom terminal tab name. Defaults to \"Claude: <name>\". Git context (branch, PR, worktree) is appended automatically."
+    },
+    "claude": {
+      "type": "object",
+      "description": "Claude Code CLI settings for this environment.",
+      "additionalProperties": false,
+      "properties": {
+        "dangerouslySkipPermissions": {
+          "type": "boolean",
+          "default": false,
+          "description": "Skip all permission prompts (--dangerously-skip-permissions). Use only in trusted local environments."
+        },
+        "model": {
+          "type": "string",
+          "description": "Override the Claude model for this environment (e.g. \"claude-sonnet-4-6\", \"claude-opus-4-6\").",
+          "examples": ["claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5-20251001"]
+        },
+        "allowedTools": {
+          "type": "array",
+          "description": "Restrict which tools Claude can use. Each entry is a tool name or pattern (e.g. \"Bash(git:*)\").",
+          "items": {
+            "type": "string",
+            "examples": ["Bash(git:*)", "Bash(npm:*)", "Read", "Edit", "Write", "Glob", "Grep"]
+          }
+        },
+        "environmentVariables": {
+          "type": "object",
+          "description": "Environment variables passed to the Claude CLI process.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "systemPrompt": {
+      "type": "string",
+      "description": "Free-form markdown injected into Claude's system prompt via --append-system-prompt. Use this for environment-specific instructions, warnings, or context."
+    },
+    "variables": {
+      "type": "array",
+      "description": "Environment variables set in the terminal and included in Claude's system prompt.",
+      "items": {
+        "$ref": "#/$defs/variable"
+      }
+    },
+    "databases": {
+      "type": "array",
+      "description": "Database connections available in this environment. Shown in the sidebar with copy actions for connection strings and credentials.",
+      "items": {
+        "$ref": "#/$defs/database"
+      }
+    },
+    "accounts": {
+      "type": "array",
+      "description": "Test or service accounts. Passwords support secret references and are resolved at launch time.",
+      "items": {
+        "$ref": "#/$defs/account"
+      }
+    },
+    "apis": {
+      "type": "array",
+      "description": "API endpoints relevant to this environment. Used for health checks (HTTP HEAD) and included in Claude's system prompt.",
+      "items": {
+        "$ref": "#/$defs/api"
+      }
+    },
+    "mcpServers": {
+      "type": "array",
+      "description": "MCP (Model Context Protocol) servers to start alongside Claude. Written to a temp config and passed via --mcp-config.",
+      "items": {
+        "$ref": "#/$defs/mcpServer"
+      }
+    },
+    "docker": {
+      "$ref": "#/$defs/docker"
+    },
+    "scripts": {
+      "type": "array",
+      "description": "Runnable scripts shown in the sidebar with play/stop controls. Can open in split terminals.",
+      "items": {
+        "$ref": "#/$defs/script"
+      }
+    },
+    "hooks": {
+      "type": "object",
+      "description": "Lifecycle hooks that run at specific points during the launch flow.",
+      "additionalProperties": false,
+      "properties": {
+        "preLaunch": {
+          "type": "array",
+          "description": "Commands to run before launching Claude. Executed sequentially with a progress notification. The launch aborts on failure unless continueOnError is set.",
+          "items": {
+            "$ref": "#/$defs/hook"
+          }
+        }
+      }
+    },
+    "sections": {
+      "type": "object",
+      "description": "Freeform markdown sections included in Claude's system prompt. Keys become headings, values become the body. Use for deployment notes, known issues, team conventions, etc.",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "examples": [
+        {
+          "Deployment": "Branch `develop` auto-deploys to staging.\n",
+          "Known Issues": "- Redis cache may be stale after deploy\n- OAuth tokens expire every 24h\n"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "secretReference": {
+      "type": "string",
+      "description": "A value or secret reference. Supported formats:\n- Plain text: \"myvalue\"\n- 1Password CLI: \"op://vault/item/field\"\n- .env file: \"env://.env.local/VAR_NAME\"\n- OS environment variable: \"$VAR_NAME\"\n- macOS Keychain / Linux secret-tool: \"keychain://service/account\"\n\nSecrets are resolved at launch time only and never written to disk."
+    },
+    "variable": {
+      "type": "object",
+      "description": "An environment variable set in the terminal session.",
+      "required": ["name", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Variable name (e.g. \"NODE_ENV\", \"API_KEY\")."
+        },
+        "value": {
+          "$ref": "#/$defs/secretReference",
+          "description": "Variable value. Supports secret references (op://, env://, $VAR, keychain://)."
+        },
+        "secret": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, the value is masked in the UI and treated as sensitive. Set this when the value is a secret reference."
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "description": "A database connection. Supports health checks (TCP connect, Redis PING) and credential copy actions.",
+      "required": ["label", "type", "host", "database"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Display name (e.g. \"App Database\", \"Redis Cache\")."
+        },
+        "type": {
+          "type": "string",
+          "description": "Database engine type. Used for icon selection, connection string format, and health check method.",
+          "enum": ["postgres", "mysql", "redis", "mongo", "sqlite", "mssql", "mariadb"],
+          "examples": ["postgres", "mysql", "redis", "mongo"]
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname or IP address."
+        },
+        "port": {
+          "type": "integer",
+          "description": "Port number. Common defaults: postgres=5432, mysql=3306, redis=6379, mongo=27017."
+        },
+        "database": {
+          "type": "string",
+          "description": "Database name (or Redis DB number as a string, e.g. \"0\")."
+        },
+        "username": {
+          "$ref": "#/$defs/secretReference",
+          "description": "Username. Supports secret references."
+        },
+        "password": {
+          "$ref": "#/$defs/secretReference",
+          "description": "Password. Supports secret references (op://, env://, $VAR, keychain://). Resolved at launch time."
+        },
+        "connectionString": {
+          "type": "string",
+          "description": "Full connection string (e.g. \"postgresql://user:pass@host:5432/db\"). If provided, used by the Copy Connection String action. Otherwise, the extension builds one from host/port/database/username/password."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes shown in Claude's system prompt (e.g. \"Read replica at db-ro.example.com\")."
+        }
+      }
+    },
+    "account": {
+      "type": "object",
+      "description": "A test or service account with credentials.",
+      "required": ["label", "username"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Display name (e.g. \"Admin\", \"Test Customer\", \"Service Account\")."
+        },
+        "username": {
+          "type": "string",
+          "description": "Username or email address."
+        },
+        "password": {
+          "$ref": "#/$defs/secretReference",
+          "description": "Password. Supports secret references (op://, env://, $VAR, keychain://). Resolved at launch time."
+        },
+        "role": {
+          "type": "string",
+          "description": "User role (e.g. \"admin\", \"customer\", \"service\")."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes (e.g. \"Has active subscription, test card 4242...\")."
+        }
+      }
+    },
+    "api": {
+      "type": "object",
+      "description": "An API endpoint. Used for health checks (HTTP HEAD) and included in Claude's system prompt.",
+      "required": ["label", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Display name (e.g. \"REST API\", \"GraphQL\", \"Admin API\")."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Full URL including protocol (e.g. \"https://api.example.com/v2\")."
+        },
+        "auth": {
+          "type": "string",
+          "description": "How to authenticate (e.g. \"Bearer token from /auth/login\", \"API key in X-Api-Key header\")."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes (e.g. \"Rate limited to 100 req/min\")."
+        }
+      }
+    },
+    "mcpServer": {
+      "type": "object",
+      "description": "An MCP (Model Context Protocol) server. Launchpad writes these to a temp config file and passes it to Claude via --mcp-config.",
+      "required": ["name", "command"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Server name used as the key in the MCP config (e.g. \"postgres\", \"sentry\", \"filesystem\")."
+        },
+        "command": {
+          "type": "string",
+          "description": "Command to start the server (e.g. \"npx\", \"node\", \"python\")."
+        },
+        "args": {
+          "type": "array",
+          "description": "Command arguments.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "env": {
+          "type": "object",
+          "description": "Environment variables for the MCP server process. Values support secret references.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "docker": {
+      "type": "object",
+      "description": "Docker Compose configuration. Manages container lifecycle when launching and closing environments.",
+      "additionalProperties": false,
+      "properties": {
+        "composeFile": {
+          "oneOf": [
+            { "type": "string" },
+            { "type": "array", "items": { "type": "string" } }
+          ],
+          "default": "docker-compose.yml",
+          "description": "Path to docker-compose file(s). Defaults to \"docker-compose.yml\"."
+        },
+        "services": {
+          "type": "array",
+          "description": "Specific services to manage. If omitted, all services in the compose file are used.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "upOnLaunch": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run `docker compose up -d` before launching Claude."
+        },
+        "downOnExit": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run `docker compose down` when the terminal closes."
+        },
+        "projectName": {
+          "type": "string",
+          "description": "Override the Compose project name (--project-name)."
+        },
+        "build": {
+          "type": "boolean",
+          "default": false,
+          "description": "Build images before starting (--build flag)."
+        },
+        "waitHealthy": {
+          "type": "boolean",
+          "default": true,
+          "description": "Wait for services to report healthy before launching Claude."
+        },
+        "waitTimeout": {
+          "type": "integer",
+          "default": 60,
+          "description": "Timeout in seconds when waiting for healthy services."
+        }
+      }
+    },
+    "script": {
+      "type": "object",
+      "description": "A runnable script shown in the sidebar with play/stop controls.",
+      "required": ["label", "command"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Display name (e.g. \"Dev Server\", \"Run Tests\")."
+        },
+        "command": {
+          "type": "string",
+          "description": "Shell command to execute (e.g. \"npm run dev\", \"pytest\")."
+        },
+        "cwd": {
+          "type": "string",
+          "description": "Working directory relative to workspace root. Defaults to workspace root."
+        },
+        "split": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, opens in a split terminal alongside the active terminal instead of a new tab."
+        }
+      }
+    },
+    "hook": {
+      "type": "object",
+      "description": "A shell command that runs as part of the launch lifecycle.",
+      "required": ["command"],
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Shell command to execute."
+        },
+        "cwd": {
+          "type": "string",
+          "description": "Working directory. Defaults to workspace root."
+        },
+        "timeout": {
+          "type": "integer",
+          "default": 30000,
+          "description": "Timeout in milliseconds. The hook is killed if it exceeds this."
+        },
+        "continueOnError": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, the launch continues even if this hook fails. Otherwise, failure aborts the launch."
+        }
+      }
+    }
+  }
+}

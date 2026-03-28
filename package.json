@@ -1,0 +1,449 @@
+{
+  "name": "launchpad",
+  "displayName": "Launchpad",
+  "description": "Manage dev environments, scripts, and sessions — switch context, credentials, and system prompts with one click.",
+  "version": "0.6.0",
+  "publisher": "doob",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/doob/vscode-launchpad"
+  },
+  "homepage": "https://github.com/doob/vscode-launchpad#readme",
+  "bugs": {
+    "url": "https://github.com/doob/vscode-launchpad/issues"
+  },
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1a1a2e",
+    "theme": "dark"
+  },
+  "keywords": [
+    "claude",
+    "ai",
+    "claude-code",
+    "environment",
+    "session",
+    "mcp",
+    "credentials",
+    "yaml",
+    "devtools",
+    "anthropic"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "preview": true,
+  "extensionDependencies": [],
+  "extensionPack": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "launchpad.selectEnvironment",
+        "title": "Select Environment",
+        "category": "Launchpad",
+        "shortTitle": "Select Env"
+      },
+      {
+        "command": "launchpad.createEnvironment",
+        "title": "Create New Environment",
+        "category": "Launchpad",
+        "shortTitle": "New Env",
+        "icon": "$(add)"
+      },
+      {
+        "command": "launchpad.editEnvironment",
+        "title": "Edit Current Environment",
+        "category": "Launchpad",
+        "shortTitle": "Edit Env"
+      },
+      {
+        "command": "launchpad.clearEnvironment",
+        "title": "Clear Active Environment",
+        "category": "Launchpad",
+        "shortTitle": "Clear Active"
+      },
+      {
+        "command": "launchpad.launchSession",
+        "title": "Launch Claude Session",
+        "category": "Launchpad",
+        "shortTitle": "Launch",
+        "icon": "$(play)"
+      },
+      {
+        "command": "launchpad.refreshTree",
+        "title": "Refresh Environments",
+        "category": "Launchpad",
+        "shortTitle": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "launchpad.editEnvFile",
+        "title": "Open Environment YAML",
+        "category": "Launchpad",
+        "shortTitle": "Edit",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "launchpad.copyConnectionString",
+        "title": "Copy Connection String",
+        "category": "Launchpad",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "launchpad.copyPassword",
+        "title": "Copy Password",
+        "category": "Launchpad",
+        "icon": "$(key)"
+      },
+      {
+        "command": "launchpad.copyUsername",
+        "title": "Copy Username",
+        "category": "Launchpad",
+        "icon": "$(person)"
+      },
+      {
+        "command": "launchpad.duplicateEnvironment",
+        "title": "Duplicate Environment",
+        "category": "Launchpad",
+        "shortTitle": "Duplicate",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "launchpad.importFromEnv",
+        "title": "Import from .env File",
+        "category": "Launchpad",
+        "shortTitle": "Import .env",
+        "icon": "$(file-symlink-file)"
+      },
+      {
+        "command": "launchpad.healthCheck",
+        "title": "Run Health Check",
+        "category": "Launchpad",
+        "shortTitle": "Health Check",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "launchpad.runScript",
+        "title": "Run Script",
+        "category": "Launchpad",
+        "icon": "$(play)"
+      },
+      {
+        "command": "launchpad.stopScript",
+        "title": "Stop Script",
+        "category": "Launchpad",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "launchpad.editTreeItem",
+        "title": "Edit Value",
+        "category": "Launchpad",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "launchpad.openAtLine",
+        "title": "Open in YAML",
+        "category": "Launchpad",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "launchpad.addItem",
+        "title": "Add Item",
+        "category": "Launchpad",
+        "icon": "$(add)"
+      },
+      {
+        "command": "launchpad.deleteItem",
+        "title": "Delete Item",
+        "category": "Launchpad",
+        "icon": "$(trash)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "launchpad",
+          "title": "Launchpad",
+          "icon": "$(server-environment)"
+        }
+      ]
+    },
+    "views": {
+      "launchpad": [
+        {
+          "id": "launchpad.environmentList",
+          "name": "Environments"
+        },
+        {
+          "id": "launchpad.editor",
+          "name": "Editor",
+          "type": "webview"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "launchpad.environmentList",
+        "contents": "No environments found.\n[Create Environment](command:launchpad.createEnvironment)\n[Import from .env](command:launchpad.importFromEnv)\n\nCreate YAML files in `.launchpad/` to define your environments."
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "launchpad.createEnvironment",
+          "when": "view == launchpad.environmentList",
+          "group": "navigation@1"
+        },
+        {
+          "command": "launchpad.importFromEnv",
+          "when": "view == launchpad.environmentList",
+          "group": "navigation@2"
+        },
+        {
+          "command": "launchpad.refreshTree",
+          "when": "view == launchpad.environmentList",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "launchpad.launchSession",
+          "when": "view == launchpad.environmentList && viewItem =~ /^env-/",
+          "group": "inline@1"
+        },
+        {
+          "command": "launchpad.healthCheck",
+          "when": "view == launchpad.environmentList && viewItem =~ /^env-/",
+          "group": "inline@2"
+        },
+        {
+          "command": "launchpad.editEnvFile",
+          "when": "view == launchpad.environmentList && viewItem =~ /^env-/",
+          "group": "inline@3"
+        },
+        {
+          "command": "launchpad.launchSession",
+          "when": "view == launchpad.environmentList && viewItem =~ /^env-/",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "launchpad.healthCheck",
+          "when": "view == launchpad.environmentList && viewItem =~ /^env-/",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "launchpad.editEnvFile",
+          "when": "view == launchpad.environmentList && viewItem =~ /^env-/",
+          "group": "1_actions@3"
+        },
+        {
+          "command": "launchpad.duplicateEnvironment",
+          "when": "view == launchpad.environmentList && viewItem =~ /^env-/",
+          "group": "2_manage@1"
+        },
+        {
+          "command": "launchpad.clearEnvironment",
+          "when": "view == launchpad.environmentList && viewItem == env-active",
+          "group": "2_manage@2"
+        },
+        {
+          "command": "launchpad.copyConnectionString",
+          "when": "view == launchpad.environmentList && viewItem == db-item",
+          "group": "3_copy@1"
+        },
+        {
+          "command": "launchpad.copyUsername",
+          "when": "view == launchpad.environmentList && viewItem =~ /^(db-item|account-item)$/",
+          "group": "3_copy@2"
+        },
+        {
+          "command": "launchpad.copyPassword",
+          "when": "view == launchpad.environmentList && viewItem =~ /^(db-item|account-item)$/",
+          "group": "3_copy@3"
+        },
+        {
+          "command": "launchpad.runScript",
+          "when": "view == launchpad.environmentList && viewItem == script-item",
+          "group": "inline@1"
+        },
+        {
+          "command": "launchpad.stopScript",
+          "when": "view == launchpad.environmentList && viewItem == script-running",
+          "group": "inline@1"
+        },
+        {
+          "command": "launchpad.runScript",
+          "when": "view == launchpad.environmentList && viewItem == script-item",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "launchpad.stopScript",
+          "when": "view == launchpad.environmentList && viewItem == script-running",
+          "group": "1_actions@1"
+        },
+
+        {
+          "command": "launchpad.editTreeItem",
+          "when": "view == launchpad.environmentList && viewItem =~ /^(editable-|db-item|account-item|api-item|variable-item|mcp-item|hook-item|script-item)/",
+          "group": "inline@2"
+        },
+        {
+          "command": "launchpad.openAtLine",
+          "when": "view == launchpad.environmentList && viewItem =~ /^(editable-|db-item|account-item|api-item|variable-item|mcp-item|hook-item|script-item|group-)/",
+          "group": "inline@3"
+        },
+        {
+          "command": "launchpad.editTreeItem",
+          "when": "view == launchpad.environmentList && viewItem =~ /^(editable-|db-item|account-item|api-item|variable-item|mcp-item|hook-item|script-item)/",
+          "group": "4_edit@1"
+        },
+        {
+          "command": "launchpad.openAtLine",
+          "when": "view == launchpad.environmentList && viewItem =~ /^(editable-|db-item|account-item|api-item|variable-item|mcp-item|hook-item|script-item|group-)/",
+          "group": "4_edit@2"
+        },
+        {
+          "command": "launchpad.deleteItem",
+          "when": "view == launchpad.environmentList && viewItem =~ /^(db-item|account-item|api-item|variable-item|mcp-item|hook-item|script-item)/",
+          "group": "4_edit@3"
+        },
+        {
+          "command": "launchpad.addItem",
+          "when": "view == launchpad.environmentList && viewItem =~ /^group-/",
+          "group": "inline@1"
+        },
+        {
+          "command": "launchpad.addItem",
+          "when": "view == launchpad.environmentList && viewItem =~ /^group-/",
+          "group": "1_actions@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Launchpad",
+      "properties": {
+        "launchpad.environmentsDir": {
+          "type": "string",
+          "default": ".launchpad",
+          "description": "Directory containing environment YAML files (relative to workspace root).",
+          "scope": "resource"
+        }
+      }
+    },
+    "yamlValidation": [
+      {
+        "fileMatch": ".launchpad/*.yaml",
+        "url": "./schemas/environment.schema.json"
+      },
+      {
+        "fileMatch": ".launchpad/*.yml",
+        "url": "./schemas/environment.schema.json"
+      }
+    ],
+    "jsonValidation": [
+      {
+        "fileMatch": ".launchpad/*.json",
+        "url": "./schemas/environment.schema.json"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "launchpad.getStarted",
+        "title": "Get Started with Launchpad",
+        "description": "Set up your first environment and launch a configured Claude Code session.",
+        "steps": [
+          {
+            "id": "launchpad.getStarted.install",
+            "title": "Install Claude Code",
+            "description": "Launchpad launches Claude Code sessions in the terminal, so you need the CLI installed.\n\n[Open Claude Code Docs](https://docs.anthropic.com/en/docs/claude-code)",
+            "media": {
+              "markdown": "Launchpad requires the `claude` CLI to be installed and available on your PATH.\n\nInstall it with:\n```bash\nnpm install -g @anthropic-ai/claude-code\n```\n\nThen verify it works:\n```bash\nclaude --version\n```"
+            },
+            "completionEvents": []
+          },
+          {
+            "id": "launchpad.getStarted.create",
+            "title": "Create Your First Environment",
+            "description": "Create a YAML file that describes your development environment — databases, credentials, APIs, and more.\n\n[Create Environment](command:launchpad.createEnvironment)",
+            "media": {
+              "markdown": "Environments are YAML files stored in `.launchpad/` at your workspace root.\n\nClick **Create Environment** above, or create a file manually:\n```yaml\nname: \"My Dev Env\"\ndescription: \"Local development setup\"\n\nsystemPrompt: |\n  You are working in the local dev environment.\n\ndatabases:\n  - label: \"Local DB\"\n    type: postgres\n    host: localhost\n    port: 5432\n    database: myapp\n    username: postgres\n    password: \"postgres\"\n```"
+            },
+            "completionEvents": [
+              "onCommand:launchpad.createEnvironment"
+            ]
+          },
+          {
+            "id": "launchpad.getStarted.sidebar",
+            "title": "Explore the Sidebar",
+            "description": "Open the Launchpad sidebar to see your environments, databases, accounts, and more.\n\n[Open Sidebar](command:workbench.view.extension.launchpad)",
+            "media": {
+              "markdown": "The Launchpad sidebar shows all your environments in a tree view.\n\nEach environment expands to reveal:\n- **Databases** — with copy actions for connection strings\n- **Accounts** — with copy actions for credentials\n- **APIs** — endpoint URLs and auth info\n- **Variables** — environment variables\n- **MCP Servers** — Model Context Protocol servers\n- **Scripts** — runnable commands with play/stop\n- **Hooks** — pre-launch setup commands\n\nRight-click any environment for actions like **Health Check**, **Duplicate**, or **Edit**."
+            },
+            "completionEvents": [
+              "onView:launchpad.environmentList"
+            ]
+          },
+          {
+            "id": "launchpad.getStarted.launch",
+            "title": "Launch a Session",
+            "description": "Click the play button next to any environment to launch a fully-configured Claude Code session.\n\n[Launch Session](command:launchpad.launchSession)",
+            "media": {
+              "markdown": "When you launch a session, Launchpad:\n\n1. Resolves all secret references (1Password, .env files, env vars, Keychain)\n2. Runs pre-launch hooks (e.g. `docker compose up`)\n3. Starts MCP servers if configured\n4. Opens a terminal running `claude` with your full environment context\n\nClaude starts knowing everything about your databases, APIs, accounts, and custom instructions — no copy-pasting needed."
+            },
+            "completionEvents": [
+              "onCommand:launchpad.launchSession"
+            ]
+          },
+          {
+            "id": "launchpad.getStarted.secrets",
+            "title": "Use Secret References",
+            "description": "Keep credentials out of your YAML files by using secret references that resolve at launch time.",
+            "media": {
+              "markdown": "Instead of hardcoding passwords, use references:\n\n| Format | Source |\n|--------|--------|\n| `op://vault/item/field` | 1Password CLI |\n| `env://.env.local/VAR` | .env file |\n| `$VAR_NAME` | OS environment variable |\n| `keychain://service/account` | macOS Keychain |\n\nExample:\n```yaml\ndatabases:\n  - label: \"Production DB\"\n    type: postgres\n    host: db.example.com\n    password: \"op://Engineering/DB/password\"\n```\n\nSecrets are resolved at launch time only and never written to disk."
+            },
+            "completionEvents": []
+          },
+          {
+            "id": "launchpad.getStarted.schema",
+            "title": "Enable YAML IntelliSense",
+            "description": "Install the YAML extension for autocomplete, validation, and hover docs in your environment files.\n\n[Install YAML Extension](command:workbench.extensions.action.showExtensionsWithIds?%5B%22redhat.vscode-yaml%22%5D)",
+            "media": {
+              "markdown": "Launchpad includes a JSON Schema for `.launchpad/*.yaml` files.\n\nWith the **YAML** extension by Red Hat installed, you get:\n- Autocomplete for all fields\n- Inline validation and error highlighting\n- Hover documentation for every property\n- Enum suggestions for fields like `database.type`\n\nThe schema is applied automatically — no configuration needed."
+            },
+            "completionEvents": [
+              "extensionInstalled:redhat.vscode-yaml"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "dev": "npm run build && npx @vscode/vsce package --no-dependencies -o launchpad-dev.vsix && code --install-extension launchpad-dev.vsix --force && rm launchpad-dev.vsix",
+    "compile": "tsc -p ./",
+    "watch": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
+    "watch:tsc": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "package": "npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.27.4",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "yaml": "^2.3.0"
+  }
+}
