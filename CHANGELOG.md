@@ -4,6 +4,14 @@ All notable changes to the **Launchpad** extension will be documented in this fi
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.2] - 2026-04-02
+
+### Removed
+- Removed unused terminal name auto-update on git branch changes (dead code cleanup)
+
+### Fixed
+- Added `.DS_Store` to `.gitignore`
+
 ## [0.7.1] - 2026-03-28
 
 ### Changed
