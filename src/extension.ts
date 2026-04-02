@@ -10,7 +10,6 @@ import { EditorWebviewProvider } from "./editorWebview";
 import { EnvironmentConfig } from "./types";
 import {
   getGitContext,
-  getGitContextFast,
   invalidateCache,
   GitContext,
 } from "./gitContext";
@@ -281,35 +280,6 @@ function buildTabName(baseName: string, gitCtx: GitContext): string {
   return baseName;
 }
 
-let updateDebounce: NodeJS.Timeout | undefined;
-
-function scheduleTerminalNameUpdate() {
-  if (updateDebounce) {
-    clearTimeout(updateDebounce);
-  }
-  updateDebounce = setTimeout(updateTerminalNames, 500);
-}
-
-function updateTerminalNames() {
-  const root = getWorkspaceRoot();
-  if (!root || trackedTerminals.size === 0) {
-    return;
-  }
-
-  const gitCtx = getGitContextFast(root);
-
-  for (const [terminal, info] of trackedTerminals) {
-    const newName = buildTabName(info.baseName, gitCtx);
-    terminal.sendText(
-      `printf '\\033]2;${escapeForPrintf(newName)}\\007'`,
-      true
-    );
-  }
-}
-
-function escapeForPrintf(s: string): string {
-  return s.replace(/\\/g, "\\\\").replace(/'/g, "'\\''");
-}
 
 // ── Build the `claude` CLI command from an environment config ──
 
@@ -1699,7 +1669,6 @@ function setupGitWatcher(context: vscode.ExtensionContext) {
 
   gitWatcher.onDidChange(() => {
     invalidateCache();
-    scheduleTerminalNameUpdate();
   });
 
   context.subscriptions.push(gitWatcher);
@@ -1710,7 +1679,6 @@ function setupGitWatcher(context: vscode.ExtensionContext) {
     if (git?.repositories?.length) {
       git.repositories[0].state.onDidChange(() => {
         invalidateCache();
-        scheduleTerminalNameUpdate();
       });
     }
   }
