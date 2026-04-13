@@ -287,7 +287,9 @@ function buildClaudeCommand(
   envConfig: EnvironmentConfig,
   mcpConfigPath?: string
 ): string {
-  const args: string[] = ["claude"];
+  const args: string[] = envConfig.claude?.version
+    ? ["npx", "-y", shellQuote(envConfig.claude.version)]
+    : ["claude"];
 
   // System prompt
   const prompt = buildSystemPrompt(envConfig);
@@ -712,6 +714,7 @@ description: "Description of the ${name} environment"
 # Claude Code CLI settings
 claude:
   dangerouslySkipPermissions: false
+  # version: "@anthropic-ai/claude-code@latest"
   # model: "claude-sonnet-4-6"
   # allowedTools:
   #   - "Bash(git:*)"

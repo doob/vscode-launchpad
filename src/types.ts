@@ -88,6 +88,9 @@ export interface HookConfig {
 }
 
 export interface ClaudeSettings {
+  /** Pin a specific Claude Code version (e.g. "@anthropic-ai/claude-code@2.1.79"). Runs via npx. */
+  version?: string;
+
   /** Skip permission prompts (--dangerously-skip-permissions) */
   dangerouslySkipPermissions?: boolean;
 

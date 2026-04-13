@@ -130,6 +130,20 @@ export class EnvironmentTreeProvider
       settingsGroup.yamlPath = ["claude"];
       settingsGroup.children = [];
 
+      if (config.claude.version) {
+        const item = new EnvTreeItem(
+          "Version",
+          envFilePath,
+          vscode.TreeItemCollapsibleState.None
+        );
+        item.description = config.claude.version;
+        item.iconPath = new vscode.ThemeIcon("versions");
+        item.contextValue = "editable-text";
+        item.yamlPath = ["claude", "version"];
+        item.editMeta = { type: "text", currentValue: config.claude.version, fieldName: "version" };
+        settingsGroup.children.push(item);
+      }
+
       if (config.claude.dangerouslySkipPermissions !== undefined) {
         const item = new EnvTreeItem(
           "Skip Permissions",
