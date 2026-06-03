@@ -162,6 +162,20 @@ export class EnvironmentTreeProvider
         settingsGroup.children.push(item);
       }
 
+      if (config.claude.worktree !== undefined) {
+        const item = new EnvTreeItem(
+          "Worktree",
+          envFilePath,
+          vscode.TreeItemCollapsibleState.None
+        );
+        item.description = config.claude.worktree ? "enabled" : "disabled";
+        item.iconPath = new vscode.ThemeIcon("source-control");
+        item.contextValue = "editable-bool";
+        item.yamlPath = ["claude", "worktree"];
+        item.editMeta = { type: "boolean", currentValue: config.claude.worktree };
+        settingsGroup.children.push(item);
+      }
+
       if (config.claude.model) {
         const item = new EnvTreeItem(
           "Model",

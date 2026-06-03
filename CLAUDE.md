@@ -45,3 +45,8 @@ The production entry point is `dist/extension.js` (esbuild bundle). The `out/` d
 ## Environment YAML Files
 
 Stored in `.launchpad/` (configurable via `launchpad.environmentsDir` setting). The schema is defined by `EnvironmentConfig` in `types.ts`. Environments support: `systemPrompt`, `variables`, `databases`, `accounts`, `apis`, `mcpServers`, `scripts`, `hooks.preLaunch`, `claude` (CLI flags), and freeform `sections`.
+
+
+## Maintenance
+
+- On all updates, make sure all references in example files and README is updated accordingly

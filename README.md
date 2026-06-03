@@ -152,13 +152,15 @@ Override Claude Code settings per environment:
 
 ```yaml
 claude:
-  dangerouslySkipPermissions: true
-  model: "claude-sonnet-4-6"
-  allowedTools:
+  version: "@anthropic-ai/claude-code@latest"  # pin a CLI version (runs via npx); omit to use global `claude`
+  dangerouslySkipPermissions: true             # skip permission prompts (trusted local envs only)
+  worktree: true                               # open in a new git worktree (-w)
+  model: "claude-sonnet-4-6"                   # override the model
+  allowedTools:                                # restrict tools to this allowlist
     - "Bash(git:*)"
     - "Read"
     - "Edit"
-  environmentVariables:
+  environmentVariables:                        # env vars passed to the Claude CLI process
     DEBUG: "true"
 ```
 
@@ -185,7 +187,9 @@ icon: "beaker"                      # VS Code codicon name (optional)
 tabName: "Staging API"              # custom terminal tab name (optional)
 
 claude:
+  version: "@anthropic-ai/claude-code@latest"   # pin CLI version via npx (optional)
   dangerouslySkipPermissions: false
+  worktree: false                                # open session in a new git worktree (-w)
   model: "claude-sonnet-4-6"
   allowedTools: ["Bash(git:*)", "Read", "Edit"]
   environmentVariables:

@@ -308,6 +308,11 @@ function buildClaudeCommand(
     args.push("--dangerously-skip-permissions");
   }
 
+  // Open in a new git worktree
+  if (envConfig.claude?.worktree) {
+    args.push("-w");
+  }
+
   // Allowed tools
   if (envConfig.claude?.allowedTools?.length) {
     args.push(

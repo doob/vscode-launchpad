@@ -4,7 +4,9 @@ icon: "tools"
 tabName: "Dev"
 
 claude:
+  # version: "@anthropic-ai/claude-code@latest"  # pin a CLI version (runs via npx)
   dangerouslySkipPermissions: true
+  # worktree: true                                # open the session in a new git worktree (-w)
   # model: "claude-sonnet-4-6"
   allowedTools:
     - "Bash(git:*)"

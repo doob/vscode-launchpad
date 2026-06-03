@@ -28,10 +28,20 @@
       "description": "Claude Code CLI settings for this environment.",
       "additionalProperties": false,
       "properties": {
+        "version": {
+          "type": "string",
+          "description": "Pin a specific Claude Code CLI version. Launched via npx instead of the global `claude` binary (e.g. \"@anthropic-ai/claude-code@2.1.79\", \"@anthropic-ai/claude-code@latest\").",
+          "examples": ["@anthropic-ai/claude-code@latest", "@anthropic-ai/claude-code@2.1.79"]
+        },
         "dangerouslySkipPermissions": {
           "type": "boolean",
           "default": false,
           "description": "Skip all permission prompts (--dangerously-skip-permissions). Use only in trusted local environments."
+        },
+        "worktree": {
+          "type": "boolean",
+          "default": false,
+          "description": "Open the session in a new git worktree (-w). Lets Claude work in an isolated checkout without disturbing your current branch."
         },
         "model": {
           "type": "string",
