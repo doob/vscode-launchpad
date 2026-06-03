@@ -291,9 +291,9 @@ function buildClaudeCommand(
     ? ["npx", "-y", shellQuote(envConfig.claude.version)]
     : ["claude"];
 
-  // System prompt
-  const prompt = buildSystemPrompt(envConfig);
-  args.push("--append-system-prompt", shellQuote(prompt));
+  // System prompt — passed via $__LAUNCHPAD_PROMPT env var to avoid
+  // terminal buffer truncation with long inline arguments
+  args.push("--append-system-prompt", '"$__LAUNCHPAD_PROMPT"');
 
   // Session name
   args.push("--name", shellQuote(`env:${envConfig.name}`));
@@ -581,6 +581,10 @@ async function launchSession(
 
     // Build terminal env vars
     const termEnv: Record<string, string> = {};
+
+    // System prompt as env var — keeps the command line short
+    termEnv.__LAUNCHPAD_PROMPT = buildSystemPrompt(envConfig);
+
     if (envConfig.variables?.length) {
       for (const v of envConfig.variables) {
         termEnv[v.name] = v.value;
