@@ -154,7 +154,7 @@ Override Claude Code settings per environment:
 claude:
   version: "@anthropic-ai/claude-code@latest"  # pin a CLI version (runs via npx); omit to use global `claude`
   dangerouslySkipPermissions: true             # skip permission prompts (trusted local envs only)
-  worktree: true                               # open in a new git worktree (-w)
+  worktree: true                               # launch in a tracked git worktree under .claude/worktrees (find it later in the sidebar)
   model: "claude-sonnet-4-6"                   # override the model
   allowedTools:                                # restrict tools to this allowlist
     - "Bash(git:*)"
@@ -163,6 +163,25 @@ claude:
   environmentVariables:                        # env vars passed to the Claude CLI process
     DEBUG: "true"
 ```
+
+### Worktrees
+
+When `claude.worktree: true` is set, Launchpad creates a dedicated git worktree for each session instead of using your current checkout:
+
+- The worktree is placed at `.claude/worktrees/<env-slug>-<n>` and checked out on a new branch named `launchpad/<env-slug>-<n>` (branched off HEAD).
+- The session terminal opens with its cwd set to the worktree directory — the original workspace is left untouched.
+- A session record is written to `.claude/worktrees/.launchpad-sessions.json` so Launchpad can find the worktree again after a crash or VS Code restart.
+
+The sidebar shows a top-level **Worktrees** section listing all tracked worktrees with the environment name and branch. Each item has actions:
+
+| Action | Description |
+|--------|-------------|
+| **Open Worktree in New Window** | Opens the worktree as a new VS Code window (default click) |
+| **Reveal Worktree in File Explorer** | Reveals the worktree folder in Finder / Explorer |
+| **Open Terminal in Worktree** | Opens a terminal at the worktree root |
+| **Remove Worktree** | Runs `git worktree remove --force` and removes the record |
+
+Stale entries (worktrees removed outside of Launchpad) are pruned automatically. The **Worktrees** node is hidden when the workspace is not a git repository.
 
 ### Import from .env
 
@@ -189,7 +208,7 @@ tabName: "Staging API"              # custom terminal tab name (optional)
 claude:
   version: "@anthropic-ai/claude-code@latest"   # pin CLI version via npx (optional)
   dangerouslySkipPermissions: false
-  worktree: false                                # open session in a new git worktree (-w)
+  worktree: false                                # launch in a tracked git worktree under .claude/worktrees (find it later in the sidebar)
   model: "claude-sonnet-4-6"
   allowedTools: ["Bash(git:*)", "Read", "Edit"]
   environmentVariables:

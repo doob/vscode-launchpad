@@ -41,7 +41,7 @@
         "worktree": {
           "type": "boolean",
           "default": false,
-          "description": "Open the session in a new git worktree (-w). Lets Claude work in an isolated checkout without disturbing your current branch."
+          "description": "Launch the session in a dedicated git worktree under .claude/worktrees, created and tracked by Launchpad. The worktree appears in the sidebar 'Worktrees' section so you can find it again after a crash or restart."
         },
         "model": {
           "type": "string",

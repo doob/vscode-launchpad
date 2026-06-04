@@ -27,6 +27,16 @@ import {
   addYamlArrayItem,
   findYamlLineNumber,
 } from "./yamlEditor";
+import {
+  addWorktree,
+  addRecordEntry,
+  existingWorktreeDirNames,
+  isGitRepo,
+  nextWorktreePaths,
+  removeWorktree,
+  RECORD_FILE,
+  type SessionRecordEntry,
+} from "./worktrees";
 
 let statusBarItem: vscode.StatusBarItem;
 let fileWatcher: vscode.FileSystemWatcher | undefined;
@@ -181,6 +191,63 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       "launchpad.deleteItem",
       (item?: EnvTreeItem) => deleteItem(item)
+    ),
+
+    // Worktree commands
+    vscode.commands.registerCommand(
+      "launchpad.openWorktreeFolder",
+      (item?: EnvTreeItem) => {
+        if (!item?.worktreeAbsPath) return;
+        vscode.commands.executeCommand(
+          "vscode.openFolder",
+          vscode.Uri.file(item.worktreeAbsPath),
+          { forceNewWindow: true }
+        );
+      }
+    ),
+    vscode.commands.registerCommand(
+      "launchpad.revealWorktree",
+      (item?: EnvTreeItem) => {
+        if (!item?.worktreeAbsPath) return;
+        vscode.commands.executeCommand(
+          "revealFileInOS",
+          vscode.Uri.file(item.worktreeAbsPath)
+        );
+      }
+    ),
+    vscode.commands.registerCommand(
+      "launchpad.openWorktreeTerminal",
+      (item?: EnvTreeItem) => {
+        if (!item?.worktreeAbsPath) return;
+        const term = vscode.window.createTerminal({
+          name: `wt: ${item.label}`,
+          cwd: item.worktreeAbsPath,
+        });
+        term.show();
+      }
+    ),
+    vscode.commands.registerCommand(
+      "launchpad.removeWorktree",
+      async (item?: EnvTreeItem) => {
+        if (!item?.worktreeAbsPath) return;
+        const ok = await vscode.window.showWarningMessage(
+          `Remove worktree at ${item.worktreeAbsPath}? This deletes the working directory.`,
+          { modal: true },
+          "Remove"
+        );
+        if (ok !== "Remove") return;
+        const root = getWorkspaceRoot();
+        if (!root) return;
+        try {
+          removeWorktree(root, item.worktreeAbsPath);
+        } catch (err: any) {
+          vscode.window.showErrorMessage(
+            `Failed to remove worktree: ${err.message}`
+          );
+          return;
+        }
+        treeProvider.refresh();
+      }
     )
   );
 
@@ -306,11 +373,6 @@ function buildClaudeCommand(
   // Permission mode
   if (envConfig.claude?.dangerouslySkipPermissions) {
     args.push("--dangerously-skip-permissions");
-  }
-
-  // Open in a new git worktree
-  if (envConfig.claude?.worktree) {
-    args.push("-w");
   }
 
   // Allowed tools
@@ -605,10 +667,41 @@ async function launchSession(
     const baseName = envConfig.tabName || `Claude: ${envConfig.name}`;
     const terminalName = buildTabName(baseName, gitCtx);
 
+    // Determine launch cwd — own the worktree ourselves when requested.
+    let launchCwd = root;
+    if (envConfig.claude?.worktree) {
+      if (!isGitRepo(root)) {
+        vscode.window.showWarningMessage(
+          "claude.worktree is set but this workspace is not a git repository — launching in the workspace root instead."
+        );
+      } else {
+        try {
+          const { relPath, branch } = nextWorktreePaths(
+            envConfig.name,
+            existingWorktreeDirNames(root)
+          );
+          launchCwd = addWorktree(root, relPath, branch);
+          const recordEntry: SessionRecordEntry = {
+            env: envConfig.name,
+            worktreePath: relPath,
+            branch,
+            createdAt: new Date().toISOString(),
+            originalEnvFile: path.relative(root, envFilePath!),
+          };
+          addRecordEntry(path.join(root, RECORD_FILE), recordEntry);
+        } catch (err: any) {
+          vscode.window.showErrorMessage(
+            `Failed to create git worktree: ${err.message}. Launching in the workspace root instead.`
+          );
+          launchCwd = root;
+        }
+      }
+    }
+
     // Create terminal and launch
     const terminal = vscode.window.createTerminal({
       name: terminalName,
-      cwd: root,
+      cwd: launchCwd,
       env: termEnv,
       iconPath: terminalIcon,
     });
@@ -628,6 +721,7 @@ async function launchSession(
     await context.workspaceState.update("activeEnvironmentFile", envFilePath);
     refreshStatusBar(context);
     treeProvider.setActive(envName);
+    treeProvider.refresh();
   } catch (err: any) {
     vscode.window.showErrorMessage(
       `Failed to launch session: ${err.message}`

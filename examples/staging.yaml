@@ -6,7 +6,7 @@ tabName: "Staging API"
 claude:
   # version: "@anthropic-ai/claude-code@latest"  # pin a CLI version (runs via npx)
   dangerouslySkipPermissions: false
-  # worktree: true                                # open the session in a new git worktree (-w)
+  # worktree: true                                # launch in a tracked git worktree under .claude/worktrees (find it later in the sidebar)
   # model: "claude-opus-4-6"
   allowedTools:
     - "Bash(git:*)"
