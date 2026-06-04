@@ -6,11 +6,13 @@ node_modules/**
 examples/**
 .claude/**
 .launchpad/**
+docs/**
 .gitignore
 .git/**
 CLAUDE.md
 tsconfig.json
 package-lock.json
+bun.lock
 *.vsix
 **/*.map
 **/*.ts

@@ -5,9 +5,13 @@ description: "Package the Launchpad VS Code extension. Use this skill when the u
 
 # Release — Launchpad VS Code Extension
 
-This skill handles versioning, changelog updates, and packaging for the Launchpad extension.
+This skill handles versioning, changelog updates, packaging, and publishing for the Launchpad extension.
 
-> **Note:** Marketplace publishing is not yet set up. Releases are distributed as `.vsix` files attached to GitHub Releases.
+> **Distribution:** Every release is attached as a `.vsix` to a GitHub Release, and published to **Open VSX** (`open-vsx.org`) for **automatic upgrades**. Open VSX reaches stock VS Code (via the Extensions panel after the user adds it as a gallery, or by direct install), Cursor, Windsurf, VSCodium, Gitpod, and Theia.
+>
+> The Microsoft VS Code Marketplace is intentionally **not** used — its Azure DevOps publisher setup is more friction than it's worth here. Open VSX provides the same auto-update mechanism without it.
+>
+> Open VSX publishing requires an `open-vsx.org` access token. The skill reads it from the `OVSX_PAT` environment variable; if it is not set, the skill stops after the GitHub Release and tells the user how to provide it.
 
 ## Usage
 
@@ -17,6 +21,8 @@ This skill handles versioning, changelog updates, and packaging for the Launchpa
 /release minor        → bump minor version
 /release major        → bump major version
 ```
+
+Append `--no-publish` to stop after the GitHub Release (skip registry publishing).
 
 ## Release Flow
 
@@ -37,14 +43,22 @@ test -d node_modules || bun install
 # vsce available
 bunx @vscode/vsce --version
 
-# Lint passes
-bun run lint
+# Type-check passes (the real correctness gate)
+bun run compile
+
+# Lint passes — NOTE: `bun run lint` calls eslint, which may not be installed
+# (not in devDependencies). If it fails with "eslint: command not found",
+# treat it as a non-blocking environment gap, note it, and rely on compile.
+bun run lint || true
 
 # Build succeeds (this also runs via vscode:prepublish)
 bun run build
+
+# Tests pass
+bun test
 ```
 
-If lint or build fails, stop and fix the issues before continuing. Do not skip these checks.
+If `compile`, `build`, or `test` fails, stop and fix the issues before continuing. A missing-eslint lint failure is non-blocking; any other failure is.
 
 ### 2. Determine version bump
 
@@ -54,12 +68,7 @@ Read the current version from `package.json`. If the user specified patch/minor/
 - **minor** (0.6.0 → 0.7.0): new features, meaningful changes
 - **major** (0.6.0 → 1.0.0): breaking changes, major milestones
 
-Bump the version:
-```bash
-bun version <patch|minor|major> --no-git-tag-version
-```
-
-The `--no-git-tag-version` flag is important — we handle the git commit and tag ourselves after updating the changelog.
+Bump the version by editing the `"version"` field in `package.json` directly (e.g. `0.7.2` → `0.8.0`). Do NOT use `bun version` — it is not available here (`bun` treats `version` as a missing script). We handle the git commit and tag ourselves after updating the changelog.
 
 ### 3. Update CHANGELOG.md
 
@@ -118,7 +127,30 @@ code --install-extension launchpad-<version>.vsix
 \`\`\`
 ```
 
-### 7. Summary
+### 7. Publish to Open VSX
+
+This is what delivers automatic upgrades to users. Skip this step entirely if the user passed `--no-publish`.
+
+First check for the token:
+
+```bash
+test -n "$OVSX_PAT" && echo "token present" || echo "OVSX_PAT not set"
+```
+
+**If `OVSX_PAT` is not set**, stop here (after the GitHub Release) and tell the user:
+> Open VSX publishing needs a token. Create an account at https://open-vsx.org, generate an access token (Settings → Access Tokens), then re-run with it available — e.g. `OVSX_PAT=<token> claude` for the session, or paste it via `! export OVSX_PAT=<token>`. First-time publishers must also create the `doob` namespace once: `bunx ovsx create-namespace doob -p <token>`.
+
+**If `OVSX_PAT` is set**, publish the already-built `.vsix` (do not rebuild):
+
+```bash
+bunx ovsx publish launchpad-<version>.vsix -p "$OVSX_PAT"
+```
+
+Report the Open VSX extension URL: `https://open-vsx.org/extension/doob/launchpad`.
+
+If publish fails with a namespace error, run `bunx ovsx create-namespace doob -p "$OVSX_PAT"` once, then retry the publish.
+
+### 8. Summary
 
 Report back:
 - Previous version → new version
@@ -126,9 +158,11 @@ Report back:
 - .vsix file path and size
 - Git tag created
 - GitHub release URL
+- Open VSX status (published + URL, or skipped because `OVSX_PAT` was absent / `--no-publish`)
 - Whether changes were pushed
 
 ## Error Handling
 
 - **Dirty working tree**: warn the user and list the uncommitted changes. Ask if they want to proceed anyway (changes will be included in the release commit) or if they'd rather commit first.
-- **Lint/build failure**: stop immediately, show the errors, and help fix them.
+- **compile/build/test failure**: stop immediately, show the errors, and help fix them. A `bun run lint` failure caused by eslint not being installed is non-blocking.
+- **Open VSX publish failure**: the GitHub Release already succeeded, so the release is not lost — report the error, suggest the namespace fix if relevant, and let the user retry just the publish step (`bunx ovsx publish launchpad-<version>.vsix -p "$OVSX_PAT"`).
