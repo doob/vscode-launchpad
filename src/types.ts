@@ -100,7 +100,7 @@ export interface ClaudeSettings {
   /** Allowed tools (e.g. "Bash(git:*)", "Read", "Edit") */
   allowedTools?: string[];
 
-  /** Open the session in a new git worktree (-w) */
+  /** Launch the session in a dedicated tracked git worktree under .claude/worktrees */
   worktree?: boolean;
 
   /** Custom environment variables passed to Claude */

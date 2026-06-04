@@ -81,7 +81,8 @@ export class EnvironmentTreeProvider
           command: "launchpad.createEnvironment",
           title: "Create Environment",
         };
-        return [placeholder];
+        const wtNode = this.buildWorktreesNode();
+        return wtNode ? [wtNode, placeholder] : [placeholder];
       }
 
       const envItems = envs.map((e) => {
@@ -171,7 +172,7 @@ export class EnvironmentTreeProvider
       "",
       vscode.TreeItemCollapsibleState.Expanded
     );
-    group.contextValue = "group-worktrees";
+    group.contextValue = "worktrees-root";
     group.iconPath = new vscode.ThemeIcon("git-branch");
     group.children = underDir.map((w) => {
       const abs = path.resolve(w.path);
