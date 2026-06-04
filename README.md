@@ -1,7 +1,7 @@
 # Launchpad — VS Code Extension for Claude Code
 
-[![Version](https://img.shields.io/visual-studio-marketplace/v/doob.launchpad)](https://marketplace.visualstudio.com/items?itemName=doob.launchpad)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/doob.launchpad)](https://marketplace.visualstudio.com/items?itemName=doob.launchpad)
+[![Open VSX Version](https://img.shields.io/open-vsx/v/doob/launchpad)](https://open-vsx.org/extension/doob/launchpad)
+[![Open VSX Downloads](https://img.shields.io/open-vsx/dt/doob/launchpad)](https://open-vsx.org/extension/doob/launchpad)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 VS Code extension that manages environment configurations for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions. Define databases, credentials, API endpoints, MCP servers, scripts, and system prompts in YAML files — then launch a configured `claude` CLI session from the sidebar.
@@ -10,13 +10,29 @@ VS Code extension that manages environment configurations for [Claude Code](http
 
 ## Install
 
+### From Open VSX (recommended)
+
+Launchpad is published on the [Open VSX Registry](https://open-vsx.org/extension/doob/launchpad), which gives you automatic updates.
+
+- **Cursor, Windsurf, VSCodium, Gitpod, Theia** — search **"Launchpad"** in the Extensions panel and click Install. These editors use Open VSX by default.
+- **Any editor, from the CLI:**
+
+  ```bash
+  ovsx get doob.launchpad        # downloads the .vsix
+  code --install-extension doob.launchpad-*.vsix
+  ```
+
+> **Stock VS Code** (Microsoft build) defaults to the Microsoft Marketplace, where Launchpad is not published. Either point `extensions.gallery` at Open VSX, or use the `.vsix` method below.
+
+### From a `.vsix` (GitHub Releases)
+
 Download the latest `.vsix` from [GitHub Releases](https://github.com/doob/vscode-launchpad/releases):
 
 ```bash
 code --install-extension launchpad-*.vsix
 ```
 
-Or build from source:
+### Build from source
 
 ```bash
 git clone https://github.com/doob/vscode-launchpad.git
