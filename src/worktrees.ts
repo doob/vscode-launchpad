@@ -22,13 +22,19 @@ export interface WorktreePaths {
 /**
  * Compute a unique worktree dir name / path / branch for an env, given the
  * dir names already present under .claude/worktrees. Uses a counter suffix so
- * it is deterministic and collision-safe.
+ * it is deterministic and collision-safe. Fills the lowest available gap, so
+ * existing dirs ["staging-1","staging-3"] yield "staging-2".
  */
 export function nextWorktreePaths(
   envName: string,
   existingDirNames: string[]
 ): WorktreePaths {
   const slug = slugify(envName);
+  if (!slug) {
+    throw new Error(
+      `Cannot create a worktree for environment "${envName}": its name has no usable characters for a directory/branch name.`
+    );
+  }
   const taken = new Set(existingDirNames);
   let n = 1;
   while (taken.has(`${slug}-${n}`)) {
