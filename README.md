@@ -176,9 +176,9 @@ The sidebar shows a top-level **Worktrees** section listing all tracked worktree
 
 | Action | Description |
 |--------|-------------|
-| **Open in New Window** | Opens the worktree as a new VS Code window (default click) |
-| **Reveal in File Explorer** | Reveals the worktree folder in Finder / Explorer |
-| **Open Terminal** | Opens a terminal at the worktree root |
+| **Open Worktree in New Window** | Opens the worktree as a new VS Code window (default click) |
+| **Reveal Worktree in File Explorer** | Reveals the worktree folder in Finder / Explorer |
+| **Open Terminal in Worktree** | Opens a terminal at the worktree root |
 | **Remove Worktree** | Runs `git worktree remove --force` and removes the record |
 
 Stale entries (worktrees removed outside of Launchpad) are pruned automatically. The **Worktrees** node is hidden when the workspace is not a git repository.

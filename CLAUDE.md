@@ -29,8 +29,9 @@ The production entry point is `dist/extension.js` (esbuild bundle). The `out/` d
 1. `parser.ts` loads YAML/JSON → `EnvironmentConfig`
 2. `secrets.ts` resolves secret references (`op://`, `env://`, `$VAR`, `keychain://`) at launch time
 3. `generator.ts` builds a plain-text system prompt from the resolved config
-4. If `claude.worktree` is true, `worktrees.ts` creates a git worktree under `.claude/worktrees/<env-slug>-<n>` on a new branch `launchpad/<env-slug>-<n>`, writes a session record, and sets the terminal cwd to the worktree directory
-5. `extension.ts` writes a temp MCP config if needed, runs pre-launch hooks, then opens a VS Code terminal running `claude --append-system-prompt ...`
+4. `extension.ts` runs pre-launch hooks and writes a temp MCP config if needed
+5. If `claude.worktree` is true, `worktrees.ts` creates a git worktree under `.claude/worktrees/<env-slug>-<n>` on a new branch `launchpad/<env-slug>-<n>`, writes a session record, and sets the terminal cwd to the worktree directory
+6. `extension.ts` opens a VS Code terminal running `claude --append-system-prompt ...` (cwd = the worktree when one was created)
 
 **Key modules:**
 - `types.ts` — all TypeScript interfaces (`EnvironmentConfig`, `DatabaseConfig`, `ClaudeSettings`, etc.)
