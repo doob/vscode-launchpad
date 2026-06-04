@@ -99,6 +99,59 @@ export function reconcileRecord(
   );
 }
 
+/** Run git with args in repoRoot, returning stdout. Throws on non-zero exit. */
+function git(repoRoot: string, args: string[]): string {
+  return execFileSync("git", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+}
+
+/** True if repoRoot is inside a git work tree. */
+export function isGitRepo(repoRoot: string): boolean {
+  try {
+    git(repoRoot, ["rev-parse", "--is-inside-work-tree"]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** List existing worktree dir names under .claude/worktrees (for unique naming). */
+export function existingWorktreeDirNames(repoRoot: string): string[] {
+  const dir = path.join(repoRoot, WORKTREES_DIR);
+  try {
+    return fs
+      .readdirSync(dir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+  } catch {
+    return [];
+  }
+}
+
+/** Create a new worktree + branch off HEAD. Returns the absolute worktree path. */
+export function addWorktree(
+  repoRoot: string,
+  relPath: string,
+  branch: string
+): string {
+  const abs = path.join(repoRoot, relPath);
+  git(repoRoot, ["worktree", "add", "-b", branch, abs, "HEAD"]);
+  return abs;
+}
+
+export function listWorktrees(repoRoot: string): GitWorktree[] {
+  return parseWorktreePorcelain(
+    git(repoRoot, ["worktree", "list", "--porcelain"])
+  );
+}
+
+/** Remove a worktree (force, to tolerate uncommitted changes). */
+export function removeWorktree(repoRoot: string, absPath: string): void {
+  git(repoRoot, ["worktree", "remove", "--force", absPath]);
+}
+
 /** Parse `git worktree list --porcelain` output. */
 export function parseWorktreePorcelain(output: string): GitWorktree[] {
   const result: GitWorktree[] = [];
