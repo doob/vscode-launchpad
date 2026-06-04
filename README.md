@@ -155,6 +155,9 @@ claude:
   version: "@anthropic-ai/claude-code@latest"  # pin a CLI version (runs via npx); omit to use global `claude`
   dangerouslySkipPermissions: true             # skip permission prompts (trusted local envs only)
   worktree: true                               # launch in a tracked git worktree under .claude/worktrees (find it later in the sidebar)
+  worktreeCopy:                                # untracked files to copy into the worktree (omit to auto-detect .env files)
+    - "apps/*/.env"
+    - "apps/*/.env.local"
   model: "claude-sonnet-4-6"                   # override the model
   allowedTools:                                # restrict tools to this allowlist
     - "Bash(git:*)"
@@ -171,6 +174,12 @@ When `claude.worktree: true` is set, Launchpad creates a dedicated git worktree 
 - The worktree is placed at `.claude/worktrees/<env-slug>-<n>` and checked out on a new branch named `launchpad/<env-slug>-<n>` (branched off HEAD).
 - The session terminal opens with its cwd set to the worktree directory — the original workspace is left untouched.
 - A session record is written to `.claude/worktrees/.launchpad-sessions.json` so Launchpad can find the worktree again after a crash or VS Code restart.
+
+Because `git worktree add` only checks out tracked files, gitignored files such as `.env` are missing from a fresh worktree. Launchpad seeds them automatically:
+
+- By default it copies any gitignored `.env` / `.env.*` files (e.g. `apps/*/.env` in a monorepo) into the same relative path in the worktree. Template files (`.env.example`, `.env.sample`, `.env.template`) are skipped.
+- Set `claude.worktreeCopy` to a list of globs (VS Code glob syntax, repo-root-relative) to copy exactly those files instead — this disables the `.env` auto-detection.
+- Set `claude.worktreeCopy: []` to copy nothing.
 
 The sidebar shows a top-level **Worktrees** section listing all tracked worktrees with the environment name and branch. Each item has actions:
 
@@ -209,6 +218,7 @@ claude:
   version: "@anthropic-ai/claude-code@latest"   # pin CLI version via npx (optional)
   dangerouslySkipPermissions: false
   worktree: false                                # launch in a tracked git worktree under .claude/worktrees (find it later in the sidebar)
+  worktreeCopy: ["apps/*/.env"]                  # untracked files to copy into the worktree (omit to auto-detect .env files)
   model: "claude-sonnet-4-6"
   allowedTools: ["Bash(git:*)", "Read", "Edit"]
   environmentVariables:

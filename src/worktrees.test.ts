@@ -4,11 +4,14 @@ import { parseWorktreePorcelain } from "./worktrees";
 import * as os from "os";
 import * as fs from "fs";
 import * as path from "path";
+import { execFileSync } from "child_process";
 import {
   readRecord,
   writeRecord,
   addRecordEntry,
   reconcileRecord,
+  detectEnvFiles,
+  copyFilesIntoWorktree,
   type SessionRecordEntry,
 } from "./worktrees";
 
@@ -124,5 +127,68 @@ describe("reconcileRecord", () => {
   test("keeps all when all paths present", () => {
     const kept = reconcileRecord([entry], ["/repo/.claude/worktrees/staging-1"], "/repo");
     expect(kept).toEqual([entry]);
+  });
+});
+
+function tmpDir(prefix: string): string {
+  return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+}
+
+describe("detectEnvFiles", () => {
+  test("finds gitignored .env files, skips templates, tracked, and .claude", () => {
+    const repo = tmpDir("wt-env-");
+    const g = (args: string[]) =>
+      execFileSync("git", args, { cwd: repo, encoding: "utf8" });
+    g(["init", "-q"]);
+    g(["config", "user.email", "t@t.com"]);
+    g(["config", "user.name", "t"]);
+
+    // .gitignore ignores all env files
+    fs.writeFileSync(path.join(repo, ".gitignore"), ".env\n.env.*\n.claude/\n");
+    fs.mkdirSync(path.join(repo, "apps", "web"), { recursive: true });
+    fs.mkdirSync(path.join(repo, ".claude", "worktrees", "x-1"), {
+      recursive: true,
+    });
+
+    fs.writeFileSync(path.join(repo, ".env"), "ROOT=1");
+    fs.writeFileSync(path.join(repo, "apps", "web", ".env"), "WEB=1");
+    fs.writeFileSync(path.join(repo, "apps", "web", ".env.local"), "WEB=2");
+    fs.writeFileSync(path.join(repo, "apps", "web", ".env.example"), "WEB=");
+    fs.writeFileSync(path.join(repo, ".claude", "worktrees", "x-1", ".env"), "X=1");
+
+    // a tracked .env.shared (not ignored) should not appear (not "others")
+    fs.writeFileSync(path.join(repo, ".env.shared"), "S=1");
+    g(["add", "-f", ".env.shared", ".gitignore"]);
+    g(["commit", "-q", "-m", "init"]);
+
+    const found = detectEnvFiles(repo).sort();
+    expect(found).toEqual([".env", "apps/web/.env", "apps/web/.env.local"]);
+  });
+
+  test("returns [] in a non-git directory", () => {
+    expect(detectEnvFiles(tmpDir("wt-nogit-"))).toEqual([]);
+  });
+});
+
+describe("copyFilesIntoWorktree", () => {
+  test("copies preserving structure, skips missing, captures failures", () => {
+    const src = tmpDir("wt-src-");
+    const dest = tmpDir("wt-dest-");
+    fs.mkdirSync(path.join(src, "apps", "web"), { recursive: true });
+    fs.writeFileSync(path.join(src, ".env"), "ROOT=1");
+    fs.writeFileSync(path.join(src, "apps", "web", ".env"), "WEB=1");
+
+    const res = copyFilesIntoWorktree(src, dest, [
+      ".env",
+      "apps/web/.env",
+      "missing/.env",
+    ]);
+
+    expect(res.copied.sort()).toEqual([".env", "apps/web/.env"]);
+    expect(res.failed).toEqual([]);
+    expect(fs.readFileSync(path.join(dest, ".env"), "utf8")).toBe("ROOT=1");
+    expect(fs.readFileSync(path.join(dest, "apps", "web", ".env"), "utf8")).toBe(
+      "WEB=1"
+    );
   });
 });

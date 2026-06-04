@@ -30,6 +30,8 @@ import {
 import {
   addWorktree,
   addRecordEntry,
+  copyFilesIntoWorktree,
+  detectEnvFiles,
   existingWorktreeDirNames,
   isGitRepo,
   nextWorktreePaths,
@@ -571,6 +573,68 @@ function dockerComposeDown(
   }
 }
 
+// ── Seed a new worktree with untracked files (e.g. .env) ──
+
+/**
+ * Copy untracked files into a freshly-created worktree. `git worktree add` only
+ * checks out tracked files, so gitignored `.env` files are missing otherwise.
+ * Never throws — copy is best-effort and must not abort the launch.
+ *
+ *  - copyGlobs undefined → auto-detect gitignored .env files
+ *  - copyGlobs []        → copy nothing (explicit opt-out)
+ *  - copyGlobs [..]      → copy files matching those globs (auto-detect off)
+ */
+async function seedWorktreeFiles(
+  root: string,
+  worktreeAbs: string,
+  copyGlobs: string[] | undefined
+): Promise<void> {
+  try {
+    let relFiles: string[];
+    if (copyGlobs === undefined) {
+      relFiles = detectEnvFiles(root);
+    } else if (copyGlobs.length === 0) {
+      relFiles = [];
+    } else {
+      const found = new Set<string>();
+      for (const glob of copyGlobs) {
+        const uris = await vscode.workspace.findFiles(
+          new vscode.RelativePattern(root, glob),
+          "**/.claude/worktrees/**"
+        );
+        for (const uri of uris) {
+          found.add(path.relative(root, uri.fsPath));
+        }
+      }
+      relFiles = [...found];
+    }
+
+    if (relFiles.length === 0) return;
+
+    const { copied, failed } = copyFilesIntoWorktree(root, worktreeAbs, relFiles);
+    if (copied.length > 0) {
+      vscode.window.showInformationMessage(
+        `Launchpad: copied ${copied.length} env file${
+          copied.length === 1 ? "" : "s"
+        } into the worktree.`
+      );
+    }
+    if (failed.length > 0) {
+      vscode.window.showWarningMessage(
+        `Launchpad: failed to copy ${failed.length} file${
+          failed.length === 1 ? "" : "s"
+        } into the worktree (${failed[0].path}: ${failed[0].error}).`
+      );
+    }
+  } catch (err: any) {
+    vscode.window.showWarningMessage(
+      `Launchpad: could not copy untracked files into the worktree: ${
+        err?.message ?? String(err)
+      }`
+    );
+  }
+}
+
 // ── Launch session: open terminal with `claude` CLI ──
 
 async function launchSession(
@@ -689,6 +753,7 @@ async function launchSession(
             originalEnvFile: path.relative(root, envFilePath!),
           };
           addRecordEntry(path.join(root, RECORD_FILE), recordEntry);
+          await seedWorktreeFiles(root, launchCwd, envConfig.claude.worktreeCopy);
         } catch (err: any) {
           vscode.window.showErrorMessage(
             `Failed to create git worktree: ${err.message}. Launching in the workspace root instead.`

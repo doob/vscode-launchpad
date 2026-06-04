@@ -7,6 +7,8 @@ claude:
   # version: "@anthropic-ai/claude-code@latest"  # pin a CLI version (runs via npx)
   dangerouslySkipPermissions: false
   # worktree: true                                # launch in a tracked git worktree under .claude/worktrees (find it later in the sidebar)
+  # worktreeCopy:                                 # untracked files to copy into the worktree (omit to auto-detect .env files)
+  #   - "apps/*/.env"
   # model: "claude-opus-4-6"
   allowedTools:
     - "Bash(git:*)"

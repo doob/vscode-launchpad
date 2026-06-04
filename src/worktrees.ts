@@ -152,6 +152,66 @@ export function removeWorktree(repoRoot: string, absPath: string): void {
   git(repoRoot, ["worktree", "remove", "--force", absPath]);
 }
 
+/** True if a basename is an env file we want to seed worktrees with:
+ *  `.env` or `.env.*`, excluding template files (*.example/*.sample/*.template). */
+function isEnvFileName(name: string): boolean {
+  if (name !== ".env" && !name.startsWith(".env.")) return false;
+  return !/\.(example|sample|template)$/i.test(name);
+}
+
+/**
+ * Repo-relative paths of gitignored `.env` files to copy into a new worktree.
+ * Uses `git ls-files --others --ignored --exclude-standard` (untracked-but-
+ * ignored files), keeps `.env` / `.env.*` basenames excluding templates, and
+ * skips anything under .claude/worktrees so prior worktrees aren't a source.
+ */
+export function detectEnvFiles(repoRoot: string): string[] {
+  let out: string;
+  try {
+    out = git(repoRoot, [
+      "ls-files",
+      "--others",
+      "--ignored",
+      "--exclude-standard",
+    ]);
+  } catch {
+    return [];
+  }
+  return out
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .filter((rel) => !rel.split("/").includes(".claude"))
+    .filter((rel) => isEnvFileName(path.basename(rel)));
+}
+
+/**
+ * Copy repo-relative files from repoRoot into the worktree, preserving
+ * directory structure. Never throws on a single failure — collects them.
+ * Skips files missing in the source.
+ */
+export function copyFilesIntoWorktree(
+  repoRoot: string,
+  worktreeAbs: string,
+  relPaths: string[]
+): { copied: string[]; failed: { path: string; error: string }[] } {
+  const copied: string[] = [];
+  const failed: { path: string; error: string }[] = [];
+  for (const rel of relPaths) {
+    const src = path.join(repoRoot, rel);
+    const dest = path.join(worktreeAbs, rel);
+    try {
+      if (!fs.existsSync(src)) continue;
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.copyFileSync(src, dest);
+      copied.push(rel);
+    } catch (err: any) {
+      failed.push({ path: rel, error: err?.message ?? String(err) });
+    }
+  }
+  return { copied, failed };
+}
+
 /** Parse `git worktree list --porcelain` output. */
 export function parseWorktreePorcelain(output: string): GitWorktree[] {
   const result: GitWorktree[] = [];

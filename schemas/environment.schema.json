@@ -43,6 +43,14 @@
           "default": false,
           "description": "Launch the session in a dedicated git worktree under .claude/worktrees, created and tracked by Launchpad. The worktree appears in the sidebar 'Worktrees' section so you can find it again after a crash or restart."
         },
+        "worktreeCopy": {
+          "type": "array",
+          "description": "Untracked files to copy into a new worktree (git only checks out tracked files). Globs use VS Code glob syntax, relative to the repo root. Omit to auto-detect gitignored .env / .env.* files; set to [] to copy nothing. Only applies when 'worktree' is true.",
+          "items": {
+            "type": "string",
+            "examples": ["**/.env", "apps/*/.env", "apps/*/.env.local"]
+          }
+        },
         "model": {
           "type": "string",
           "description": "Override the Claude model for this environment (e.g. \"claude-sonnet-4-6\", \"claude-opus-4-6\").",

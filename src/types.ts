@@ -103,6 +103,14 @@ export interface ClaudeSettings {
   /** Launch the session in a dedicated tracked git worktree under .claude/worktrees */
   worktree?: boolean;
 
+  /**
+   * Globs (VS Code glob syntax, repo-root-relative) of untracked files to copy
+   * into a new worktree, since `git worktree add` only materializes tracked
+   * files. Omit to auto-detect gitignored `.env` files; set to [] to copy
+   * nothing. Only applies when `worktree` is true.
+   */
+  worktreeCopy?: string[];
+
   /** Custom environment variables passed to Claude */
   environmentVariables?: Record<string, string>;
 }
