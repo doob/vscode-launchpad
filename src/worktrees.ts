@@ -54,6 +54,51 @@ export interface GitWorktree {
   branch?: string; // short name, e.g. "launchpad/staging-1"; undefined if detached
 }
 
+export interface SessionRecordEntry {
+  env: string;
+  worktreePath: string; // relative to repo root, e.g. ".claude/worktrees/staging-1"
+  branch: string;
+  createdAt: string; // ISO 8601
+  originalEnvFile: string; // relative path to the env YAML/JSON
+}
+
+export function readRecord(file: string): SessionRecordEntry[] {
+  try {
+    const raw = fs.readFileSync(file, "utf8");
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function writeRecord(file: string, entries: SessionRecordEntry[]): void {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(entries, null, 2));
+}
+
+export function addRecordEntry(file: string, entry: SessionRecordEntry): void {
+  const entries = readRecord(file);
+  entries.push(entry);
+  writeRecord(file, entries);
+}
+
+/**
+ * Drop record entries whose worktree no longer exists in git. `existingAbsPaths`
+ * are absolute paths from `git worktree list`; `repoRoot` resolves the relative
+ * worktreePath for comparison.
+ */
+export function reconcileRecord(
+  entries: SessionRecordEntry[],
+  existingAbsPaths: string[],
+  repoRoot: string
+): SessionRecordEntry[] {
+  const live = new Set(existingAbsPaths.map((p) => path.resolve(p)));
+  return entries.filter((e) =>
+    live.has(path.resolve(repoRoot, e.worktreePath))
+  );
+}
+
 /** Parse `git worktree list --porcelain` output. */
 export function parseWorktreePorcelain(output: string): GitWorktree[] {
   const result: GitWorktree[] = [];
