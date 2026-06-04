@@ -27,6 +27,15 @@ import {
   addYamlArrayItem,
   findYamlLineNumber,
 } from "./yamlEditor";
+import {
+  addWorktree,
+  addRecordEntry,
+  existingWorktreeDirNames,
+  isGitRepo,
+  nextWorktreePaths,
+  RECORD_FILE,
+  type SessionRecordEntry,
+} from "./worktrees";
 
 let statusBarItem: vscode.StatusBarItem;
 let fileWatcher: vscode.FileSystemWatcher | undefined;
@@ -306,11 +315,6 @@ function buildClaudeCommand(
   // Permission mode
   if (envConfig.claude?.dangerouslySkipPermissions) {
     args.push("--dangerously-skip-permissions");
-  }
-
-  // Open in a new git worktree
-  if (envConfig.claude?.worktree) {
-    args.push("-w");
   }
 
   // Allowed tools
@@ -605,10 +609,41 @@ async function launchSession(
     const baseName = envConfig.tabName || `Claude: ${envConfig.name}`;
     const terminalName = buildTabName(baseName, gitCtx);
 
+    // Determine launch cwd — own the worktree ourselves when requested.
+    let launchCwd = root;
+    if (envConfig.claude?.worktree) {
+      if (!isGitRepo(root)) {
+        vscode.window.showWarningMessage(
+          "claude.worktree is set but this workspace is not a git repository — launching in the workspace root instead."
+        );
+      } else {
+        try {
+          const { relPath, branch } = nextWorktreePaths(
+            envConfig.name,
+            existingWorktreeDirNames(root)
+          );
+          launchCwd = addWorktree(root, relPath, branch);
+          const recordEntry: SessionRecordEntry = {
+            env: envConfig.name,
+            worktreePath: relPath,
+            branch,
+            createdAt: new Date().toISOString(),
+            originalEnvFile: path.relative(root, envFilePath!),
+          };
+          addRecordEntry(path.join(root, RECORD_FILE), recordEntry);
+        } catch (err: any) {
+          vscode.window.showErrorMessage(
+            `Failed to create git worktree: ${err.message}. Launching in the workspace root instead.`
+          );
+          launchCwd = root;
+        }
+      }
+    }
+
     // Create terminal and launch
     const terminal = vscode.window.createTerminal({
       name: terminalName,
-      cwd: root,
+      cwd: launchCwd,
       env: termEnv,
       iconPath: terminalIcon,
     });
@@ -628,6 +663,7 @@ async function launchSession(
     await context.workspaceState.update("activeEnvironmentFile", envFilePath);
     refreshStatusBar(context);
     treeProvider.setActive(envName);
+    treeProvider.refresh();
   } catch (err: any) {
     vscode.window.showErrorMessage(
       `Failed to launch session: ${err.message}`
