@@ -151,12 +151,17 @@ export class EnvironmentTreeProvider
 
     // Reconcile the record against what actually exists, persisting the prune.
     const recordFile = path.join(root, RECORD_FILE);
+    const original = readRecord(recordFile);
     const reconciled = reconcileRecord(
-      readRecord(recordFile),
+      original,
       underDir.map((w) => w.path),
       root
     );
-    writeRecord(recordFile, reconciled);
+    // reconcileRecord only ever removes entries, so a length change is the
+    // only possible difference — avoid rewriting the file on every render.
+    if (reconciled.length !== original.length) {
+      writeRecord(recordFile, reconciled);
+    }
     const byPath = new Map<string, SessionRecordEntry>(
       reconciled.map((e) => [path.resolve(root, e.worktreePath), e])
     );
@@ -177,7 +182,7 @@ export class EnvironmentTreeProvider
         "",
         vscode.TreeItemCollapsibleState.None
       );
-      item.description = rec ? w.branch || "" : "(unknown env)";
+      item.description = rec ? w.branch || "(detached)" : "(unknown env)";
       item.tooltip = abs;
       item.iconPath = new vscode.ThemeIcon("folder");
       item.contextValue = "worktree-item";
