@@ -33,6 +33,7 @@ import {
   existingWorktreeDirNames,
   isGitRepo,
   nextWorktreePaths,
+  removeWorktree,
   RECORD_FILE,
   type SessionRecordEntry,
 } from "./worktrees";
@@ -190,6 +191,63 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       "launchpad.deleteItem",
       (item?: EnvTreeItem) => deleteItem(item)
+    ),
+
+    // Worktree commands
+    vscode.commands.registerCommand(
+      "launchpad.openWorktreeFolder",
+      (item?: EnvTreeItem) => {
+        if (!item?.worktreeAbsPath) return;
+        vscode.commands.executeCommand(
+          "vscode.openFolder",
+          vscode.Uri.file(item.worktreeAbsPath),
+          { forceNewWindow: true }
+        );
+      }
+    ),
+    vscode.commands.registerCommand(
+      "launchpad.revealWorktree",
+      (item?: EnvTreeItem) => {
+        if (!item?.worktreeAbsPath) return;
+        vscode.commands.executeCommand(
+          "revealFileInOS",
+          vscode.Uri.file(item.worktreeAbsPath)
+        );
+      }
+    ),
+    vscode.commands.registerCommand(
+      "launchpad.openWorktreeTerminal",
+      (item?: EnvTreeItem) => {
+        if (!item?.worktreeAbsPath) return;
+        const term = vscode.window.createTerminal({
+          name: `wt: ${item.label}`,
+          cwd: item.worktreeAbsPath,
+        });
+        term.show();
+      }
+    ),
+    vscode.commands.registerCommand(
+      "launchpad.removeWorktree",
+      async (item?: EnvTreeItem) => {
+        if (!item?.worktreeAbsPath) return;
+        const ok = await vscode.window.showWarningMessage(
+          `Remove worktree at ${item.worktreeAbsPath}? This deletes the working directory.`,
+          { modal: true },
+          "Remove"
+        );
+        if (ok !== "Remove") return;
+        const root = getWorkspaceRoot();
+        if (!root) return;
+        try {
+          removeWorktree(root, item.worktreeAbsPath);
+        } catch (err: any) {
+          vscode.window.showErrorMessage(
+            `Failed to remove worktree: ${err.message}`
+          );
+          return;
+        }
+        treeProvider.refresh();
+      }
     )
   );
 
