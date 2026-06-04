@@ -10,6 +10,17 @@ import {
   ScriptConfig,
   HookConfig,
 } from "./types";
+import {
+  isGitRepo,
+  listWorktrees,
+  readRecord,
+  reconcileRecord,
+  writeRecord,
+  WORKTREES_DIR,
+  RECORD_FILE,
+  type GitWorktree,
+  type SessionRecordEntry,
+} from "./worktrees";
 
 export class EnvironmentTreeProvider
   implements vscode.TreeDataProvider<EnvTreeItem>
@@ -73,7 +84,7 @@ export class EnvironmentTreeProvider
         return [placeholder];
       }
 
-      return envs.map((e) => {
+      const envItems = envs.map((e) => {
         const isActive = e.name === this.activeEnvName;
         let config: EnvironmentConfig | undefined;
         try {
@@ -102,6 +113,9 @@ export class EnvironmentTreeProvider
 
         return item;
       });
+
+      const wtNode = this.buildWorktreesNode();
+      return wtNode ? [wtNode, ...envItems] : envItems;
     }
 
     // Children: show details of an environment
@@ -110,6 +124,72 @@ export class EnvironmentTreeProvider
     }
 
     return [];
+  }
+
+  /** Top-level node listing live worktrees joined with the session record. */
+  private buildWorktreesNode(): EnvTreeItem | undefined {
+    const root = this.workspaceRoot;
+    if (!root || !isGitRepo(root)) {
+      return undefined;
+    }
+
+    let worktrees: GitWorktree[];
+    try {
+      worktrees = listWorktrees(root);
+    } catch {
+      return undefined;
+    }
+
+    const underDir = worktrees.filter((w) =>
+      path
+        .resolve(w.path)
+        .startsWith(path.resolve(root, WORKTREES_DIR) + path.sep)
+    );
+    if (underDir.length === 0) {
+      return undefined;
+    }
+
+    // Reconcile the record against what actually exists, persisting the prune.
+    const recordFile = path.join(root, RECORD_FILE);
+    const reconciled = reconcileRecord(
+      readRecord(recordFile),
+      underDir.map((w) => w.path),
+      root
+    );
+    writeRecord(recordFile, reconciled);
+    const byPath = new Map<string, SessionRecordEntry>(
+      reconciled.map((e) => [path.resolve(root, e.worktreePath), e])
+    );
+
+    const group = new EnvTreeItem(
+      "Worktrees",
+      "",
+      vscode.TreeItemCollapsibleState.Expanded
+    );
+    group.contextValue = "group-worktrees";
+    group.iconPath = new vscode.ThemeIcon("git-branch");
+    group.children = underDir.map((w) => {
+      const abs = path.resolve(w.path);
+      const rec = byPath.get(abs);
+      const label = rec ? rec.env : w.branch || path.basename(w.path);
+      const item = new EnvTreeItem(
+        label,
+        "",
+        vscode.TreeItemCollapsibleState.None
+      );
+      item.description = rec ? w.branch || "" : "(unknown env)";
+      item.tooltip = abs;
+      item.iconPath = new vscode.ThemeIcon("folder");
+      item.contextValue = "worktree-item";
+      item.worktreeAbsPath = abs;
+      item.command = {
+        command: "launchpad.openWorktreeFolder",
+        title: "Open Worktree in New Window",
+        arguments: [item],
+      };
+      return item;
+    });
+    return group;
   }
 
   private getEnvDetails(
@@ -514,6 +594,7 @@ export class EnvTreeItem extends vscode.TreeItem {
   public apiConfig?: ApiEndpoint;
   public scriptConfig?: ScriptConfig;
   public envName?: string;
+  public worktreeAbsPath?: string;
 
   constructor(
     public readonly label: string,
