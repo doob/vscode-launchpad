@@ -4,6 +4,18 @@ All notable changes to the **Launchpad** extension will be documented in this fi
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.8.0] - 2026-06-04
+
+### Added
+- **Worktree session recovery** — a top-level **Worktrees** section in the sidebar lists every active worktree session so you can find your way back after a crash or restart, even with several sessions running at once. Each entry shows its environment and branch, with actions to **Open in New Window**, **Reveal in File Explorer**, **Open Terminal**, and **Remove Worktree**.
+- Launchpad now records each worktree session (environment → worktree mapping) in `.claude/worktrees/.launchpad-sessions.json`, and self-heals the list when worktrees are removed outside the extension.
+
+### Changed
+- `claude.worktree: true` now creates and tracks the worktree itself under `.claude/worktrees/<env>-<n>` on a `launchpad/<env>-<n>` branch and launches the session there, instead of delegating to the `claude` CLI's `-w` flag. This is what makes sessions findable afterwards. Non-git workspaces warn and fall back to the workspace root.
+
+### Fixed
+- Added `.claude/worktrees/` to `.gitignore` so generated worktrees and the session record are never committed.
+
 ## [0.7.2] - 2026-04-02
 
 ### Removed
