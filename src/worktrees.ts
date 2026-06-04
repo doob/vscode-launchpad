@@ -47,3 +47,31 @@ export function nextWorktreePaths(
     branch: `launchpad/${dirName}`,
   };
 }
+
+export interface GitWorktree {
+  path: string;
+  head?: string;
+  branch?: string; // short name, e.g. "launchpad/staging-1"; undefined if detached
+}
+
+/** Parse `git worktree list --porcelain` output. */
+export function parseWorktreePorcelain(output: string): GitWorktree[] {
+  const result: GitWorktree[] = [];
+  let current: GitWorktree | undefined;
+  for (const line of output.split("\n")) {
+    if (line.startsWith("worktree ")) {
+      current = { path: line.slice("worktree ".length).trim() };
+      result.push(current);
+    } else if (!current) {
+      continue;
+    } else if (line.startsWith("HEAD ")) {
+      current.head = line.slice("HEAD ".length).trim();
+    } else if (line.startsWith("branch ")) {
+      current.branch = line
+        .slice("branch ".length)
+        .trim()
+        .replace(/^refs\/heads\//, "");
+    }
+  }
+  return result;
+}

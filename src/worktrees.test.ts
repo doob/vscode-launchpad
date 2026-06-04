@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { slugify, nextWorktreePaths } from "./worktrees";
+import { parseWorktreePorcelain } from "./worktrees";
 
 describe("slugify", () => {
   test("lowercases and kebab-cases", () => {
@@ -32,5 +33,39 @@ describe("nextWorktreePaths", () => {
   test("slugifies the env name", () => {
     const r = nextWorktreePaths("My Env", []);
     expect(r.dirName).toBe("my-env-1");
+  });
+});
+
+describe("parseWorktreePorcelain", () => {
+  const sample = [
+    "worktree /repo",
+    "HEAD abc123",
+    "branch refs/heads/main",
+    "",
+    "worktree /repo/.claude/worktrees/staging-1",
+    "HEAD def456",
+    "branch refs/heads/launchpad/staging-1",
+    "",
+    "worktree /repo/.claude/worktrees/detached-1",
+    "HEAD aaa111",
+    "detached",
+    "",
+  ].join("\n");
+
+  test("parses all worktrees with path/head/branch", () => {
+    const wts = parseWorktreePorcelain(sample);
+    expect(wts).toHaveLength(3);
+    expect(wts[0]).toEqual({ path: "/repo", head: "abc123", branch: "main" });
+    expect(wts[1].branch).toBe("launchpad/staging-1");
+  });
+
+  test("detached worktree has undefined branch", () => {
+    const wts = parseWorktreePorcelain(sample);
+    expect(wts[2].branch).toBeUndefined();
+    expect(wts[2].path).toBe("/repo/.claude/worktrees/detached-1");
+  });
+
+  test("empty input yields empty array", () => {
+    expect(parseWorktreePorcelain("")).toEqual([]);
   });
 });
