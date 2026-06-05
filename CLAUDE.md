@@ -28,10 +28,12 @@ The production entry point is `dist/extension.js` (esbuild bundle). The `out/` d
 **Launch flow** (in `launchSession`):
 1. `parser.ts` loads YAML/JSON → `EnvironmentConfig`
 2. `secrets.ts` resolves secret references (`op://`, `env://`, `$VAR`, `keychain://`) at launch time
-3. `generator.ts` builds a plain-text system prompt from the resolved config
-4. `extension.ts` runs pre-launch hooks and writes a temp MCP config if needed
-5. If `claude.worktree` is true, `worktrees.ts` creates a git worktree under `.claude/worktrees/<env-slug>-<n>` on a new branch `launchpad/<env-slug>-<n>`, writes a session record, and sets the terminal cwd to the worktree directory. It also seeds the worktree with untracked files (git only checks out tracked files): `claude.worktreeCopy` globs if set, otherwise auto-detected gitignored `.env` files
-6. `extension.ts` opens a VS Code terminal running `claude --append-system-prompt ...` (cwd = the worktree when one was created)
+3. `extension.ts` runs pre-launch hooks
+4. If the config has a `docker` section, `extension.ts` runs `docker compose up -d` for the required services
+5. `extension.ts` writes a temp MCP config if needed and builds the `claude` command
+6. `generator.ts` builds a markdown system prompt from the resolved config (passed to `claude --append-system-prompt`)
+7. If `claude.worktree` is true, `worktrees.ts` creates a git worktree under `.claude/worktrees/<env-slug>-<n>` on a new branch `launchpad/<env-slug>-<n>`, writes a session record, and sets the terminal cwd to the worktree directory. `seedWorktreeFiles` (in `extension.ts`) then seeds the worktree with untracked files (git only checks out tracked files): `claude.worktreeCopy` globs if set, otherwise auto-detected gitignored `.env` files
+8. `extension.ts` opens a VS Code terminal running `claude --append-system-prompt ...` (cwd = the worktree when one was created)
 
 **Key modules:**
 - `types.ts` — all TypeScript interfaces (`EnvironmentConfig`, `DatabaseConfig`, `ClaudeSettings`, etc.)
@@ -39,15 +41,17 @@ The production entry point is `dist/extension.js` (esbuild bundle). The `out/` d
 - `secrets.ts` — secret resolution (1Password CLI, .env files, OS env vars, macOS Keychain/Linux secret-tool) and `.env` file parsing
 - `generator.ts` — converts `EnvironmentConfig` into the markdown system prompt string
 - `gitContext.ts` — git branch/PR/worktree detection for smart terminal tab names; PR lookups are cached (60s TTL) and async to avoid blocking
-- `worktrees.ts` — owns git worktree creation for `claude.worktree` sessions, the on-disk session record (`.claude/worktrees/.launchpad-sessions.json`), helpers to list/reconcile/remove worktrees for the sidebar, and seeding untracked files into a new worktree (`detectEnvFiles`, `copyFilesIntoWorktree`)
+- `worktrees.ts` — owns git worktree creation for `claude.worktree` sessions, the on-disk session record (`.claude/worktrees/.launchpad-sessions.json`), helpers to list/reconcile/remove worktrees for the sidebar, and the file-seeding primitives (`ENV_FILE_GLOBS`, `isEnvFileName`, `copyFilesIntoWorktree`). The seeding orchestrator `seedWorktreeFiles` lives in `extension.ts`
 - `treeView.ts` — sidebar tree data provider showing environments with nested details (databases, accounts, APIs, variables, MCP servers, scripts, hooks)
 - `healthCheck.ts` — TCP socket checks for databases (with Redis PING/PONG), HTTP HEAD for APIs
+- `editorWebview.ts` — webview panel for editing environment YAML files in a form-style UI
+- `yamlEditor.ts` — surgical YAML mutation helpers (`updateYamlValue`, `deleteYamlItem`, `addYamlArrayItem`, `findYamlLineNumber`, `getYamlValue`) used by the editor webview to preserve formatting/comments
 
 **Single dependency:** `yaml` (for YAML parsing). Everything else is Node built-ins or the VS Code API.
 
 ## Environment YAML Files
 
-Stored in `.launchpad/` (configurable via `launchpad.environmentsDir` setting). The schema is defined by `EnvironmentConfig` in `types.ts`. Environments support: `systemPrompt`, `variables`, `databases`, `accounts`, `apis`, `mcpServers`, `scripts`, `hooks.preLaunch`, `claude` (CLI flags), and freeform `sections`.
+Stored in `.launchpad/` (configurable via `launchpad.environmentsDir` setting). The schema is defined by `EnvironmentConfig` in `types.ts`. Environments support: `systemPrompt`, `variables`, `databases`, `accounts`, `apis`, `mcpServers`, `scripts`, `docker` (Docker Compose lifecycle), `hooks.preLaunch`, `claude` (CLI flags), and freeform `sections`.
 
 
 ## Maintenance
