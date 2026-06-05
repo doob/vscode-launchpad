@@ -31,7 +31,8 @@ import {
   addWorktree,
   addRecordEntry,
   copyFilesIntoWorktree,
-  detectEnvFiles,
+  ENV_FILE_GLOBS,
+  isEnvFileName,
   existingWorktreeDirNames,
   isGitRepo,
   nextWorktreePaths,
@@ -580,9 +581,13 @@ function dockerComposeDown(
  * checks out tracked files, so gitignored `.env` files are missing otherwise.
  * Never throws — copy is best-effort and must not abort the launch.
  *
- *  - copyGlobs undefined → auto-detect gitignored .env files
+ *  - copyGlobs undefined → auto-detect .env files (templates excluded)
  *  - copyGlobs []        → copy nothing (explicit opt-out)
  *  - copyGlobs [..]      → copy files matching those globs (auto-detect off)
+ *
+ * Discovery uses VS Code's async indexed search (`findFiles`) — never a
+ * synchronous git call — so it stays off the UI thread and never walks the
+ * whole ignored tree of a large repo.
  */
 async function seedWorktreeFiles(
   root: string,
@@ -590,28 +595,31 @@ async function seedWorktreeFiles(
   copyGlobs: string[] | undefined
 ): Promise<void> {
   try {
-    let relFiles: string[];
-    if (copyGlobs === undefined) {
-      relFiles = detectEnvFiles(root);
-    } else if (copyGlobs.length === 0) {
-      relFiles = [];
-    } else {
-      const found = new Set<string>();
-      for (const glob of copyGlobs) {
-        const uris = await vscode.workspace.findFiles(
-          new vscode.RelativePattern(root, glob),
-          "**/.claude/worktrees/**"
-        );
-        for (const uri of uris) {
-          found.add(path.relative(root, uri.fsPath));
-        }
+    // Explicit opt-out: an empty list means copy nothing.
+    if (copyGlobs !== undefined && copyGlobs.length === 0) return;
+
+    const autoDetect = copyGlobs === undefined || copyGlobs.length === 0;
+    const globs = autoDetect ? ENV_FILE_GLOBS : copyGlobs;
+
+    const found = new Set<string>();
+    for (const glob of globs) {
+      const uris = await vscode.workspace.findFiles(
+        new vscode.RelativePattern(root, glob),
+        "**/.claude/worktrees/**"
+      );
+      for (const uri of uris) {
+        const rel = path.relative(root, uri.fsPath);
+        // On auto-detect, keep only real env files (drop .env.example etc.).
+        if (autoDetect && !isEnvFileName(path.basename(rel))) continue;
+        found.add(rel);
       }
-      relFiles = [...found];
     }
 
-    if (relFiles.length === 0) return;
+    if (found.size === 0) return;
 
-    const { copied, failed } = copyFilesIntoWorktree(root, worktreeAbs, relFiles);
+    const { copied, failed } = copyFilesIntoWorktree(root, worktreeAbs, [
+      ...found,
+    ]);
     if (copied.length > 0) {
       vscode.window.showInformationMessage(
         `Launchpad: copied ${copied.length} env file${

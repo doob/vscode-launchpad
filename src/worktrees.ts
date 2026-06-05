@@ -152,37 +152,14 @@ export function removeWorktree(repoRoot: string, absPath: string): void {
   git(repoRoot, ["worktree", "remove", "--force", absPath]);
 }
 
+/** Glob patterns used to auto-detect env files when no explicit list is given. */
+export const ENV_FILE_GLOBS = ["**/.env", "**/.env.*"];
+
 /** True if a basename is an env file we want to seed worktrees with:
  *  `.env` or `.env.*`, excluding template files (*.example/*.sample/*.template). */
-function isEnvFileName(name: string): boolean {
+export function isEnvFileName(name: string): boolean {
   if (name !== ".env" && !name.startsWith(".env.")) return false;
   return !/\.(example|sample|template)$/i.test(name);
-}
-
-/**
- * Repo-relative paths of gitignored `.env` files to copy into a new worktree.
- * Uses `git ls-files --others --ignored --exclude-standard` (untracked-but-
- * ignored files), keeps `.env` / `.env.*` basenames excluding templates, and
- * skips anything under .claude/worktrees so prior worktrees aren't a source.
- */
-export function detectEnvFiles(repoRoot: string): string[] {
-  let out: string;
-  try {
-    out = git(repoRoot, [
-      "ls-files",
-      "--others",
-      "--ignored",
-      "--exclude-standard",
-    ]);
-  } catch {
-    return [];
-  }
-  return out
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0)
-    .filter((rel) => !rel.split("/").includes(".claude"))
-    .filter((rel) => isEnvFileName(path.basename(rel)));
 }
 
 /**

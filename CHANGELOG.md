@@ -4,6 +4,11 @@ All notable changes to the **Launchpad** extension will be documented in this fi
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.9.1] - 2026-06-05
+
+### Fixed
+- Worktree env-file seeding no longer runs a synchronous `git ls-files --others --ignored` on the extension host's UI thread. In a large monorepo that enumerated the entire ignored tree (every `node_modules`, build output, …), which could overflow Node's child-process buffer and freeze the window during launch. Discovery now uses VS Code's async indexed file search and only ever touches `.env` files.
+
 ## [0.9.0] - 2026-06-05
 
 ### Added
