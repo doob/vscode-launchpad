@@ -6,7 +6,7 @@
 
 VS Code extension that manages environment configurations for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions. Define databases, credentials, API endpoints, MCP servers, scripts, and system prompts in YAML files — then launch a configured `claude` CLI session from the sidebar.
 
-![Launchpad sidebar showing environments](images/screenshot-sidebar.png)
+![Launchpad launch sequence — multiple sessions in tabs; launch one and it runs pre-launch hooks, spins up an isolated git worktree, wires up MCP servers, and boots Claude already knowing your databases, APIs and secrets](images/launch-sequence.svg)
 
 ## Install
 
@@ -65,6 +65,8 @@ code --install-extension launchpad-*.vsix
 ### Sidebar Panel
 
 Environments are listed in a dedicated sidebar. Each one expands into a tree showing its databases, accounts, APIs, variables, MCP servers, scripts, and hooks. Right-click for actions like launch, edit, duplicate, and health check.
+
+![Launchpad sidebar showing environments](images/screenshot-sidebar.png)
 
 ### Secret Resolution
 
