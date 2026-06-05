@@ -16,6 +16,7 @@ import {
   listWorktrees,
   removeWorktree,
   existingWorktreeDirNames,
+  existingWorktreeBranchNames,
   type SessionRecordEntry,
 } from "./worktrees";
 
@@ -50,6 +51,21 @@ describe("nextWorktreePaths", () => {
   test("slugifies the env name", () => {
     const r = nextWorktreePaths("My Env", []);
     expect(r.dirName).toBe("my-env-1");
+  });
+  test("skips a slot whose branch is orphaned (dir gone, branch left behind)", () => {
+    // dir production-1 exists; branch launchpad/production-2 lingers with no dir.
+    // Slot 2's branch is taken, so the next free slot is 3.
+    const r = nextWorktreePaths("production", ["production-1"], ["production-2"]);
+    expect(r.dirName).toBe("production-3");
+    expect(r.branch).toBe("launchpad/production-3");
+  });
+  test("skips a slot when only the branch is taken (no dirs)", () => {
+    const r = nextWorktreePaths("staging", [], ["staging-1"]);
+    expect(r.dirName).toBe("staging-2");
+  });
+  test("fills the lowest gap free in BOTH dirs and branches", () => {
+    const r = nextWorktreePaths("staging", ["staging-1"], ["staging-3"]);
+    expect(r.dirName).toBe("staging-2");
   });
 });
 
@@ -224,5 +240,45 @@ describe("worktree creation (e2e against real git)", () => {
 
     removeWorktree(repo, abs);
     expect(fs.existsSync(abs)).toBe(false);
+  });
+
+  test("removeWorktree deletes the launchpad branch so the slot can be reused", () => {
+    const repo = initRepo();
+    const a = nextWorktreePaths("staging", existingWorktreeDirNames(repo));
+    const abs = addWorktree(repo, a.relPath, a.branch);
+
+    expect(existingWorktreeBranchNames(repo)).toContain("staging-1");
+    removeWorktree(repo, abs);
+    // Branch is gone too — no orphan left behind.
+    expect(existingWorktreeBranchNames(repo)).not.toContain("staging-1");
+
+    // The next allocation reuses slot 1 (both dir and branch are free again),
+    // and creating it succeeds (no "branch already exists" failure).
+    const b = nextWorktreePaths(
+      "staging",
+      existingWorktreeDirNames(repo),
+      existingWorktreeBranchNames(repo)
+    );
+    expect(b.dirName).toBe("staging-1");
+    const abs2 = addWorktree(repo, b.relPath, b.branch);
+    expect(fs.existsSync(abs2)).toBe(true);
+    removeWorktree(repo, abs2);
+  });
+
+  test("nextWorktreePaths avoids a real orphaned branch (regression)", () => {
+    const repo = initRepo();
+    // Leave a branch behind with no worktree, mimicking the reported bug.
+    execFileSync("git", ["branch", "launchpad/staging-1"], { cwd: repo });
+
+    const p = nextWorktreePaths(
+      "staging",
+      existingWorktreeDirNames(repo),
+      existingWorktreeBranchNames(repo)
+    );
+    // Must skip slot 1 (branch taken) and succeed at slot 2.
+    expect(p.dirName).toBe("staging-2");
+    const abs = addWorktree(repo, p.relPath, p.branch);
+    expect(fs.existsSync(abs)).toBe(true);
+    removeWorktree(repo, abs);
   });
 });

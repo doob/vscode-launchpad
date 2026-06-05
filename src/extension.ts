@@ -34,6 +34,7 @@ import {
   ENV_FILE_GLOBS,
   isEnvFileName,
   existingWorktreeDirNames,
+  existingWorktreeBranchNames,
   isGitRepo,
   nextWorktreePaths,
   removeWorktree,
@@ -750,7 +751,8 @@ async function launchSession(
         try {
           const { relPath, branch } = nextWorktreePaths(
             envConfig.name,
-            existingWorktreeDirNames(root)
+            existingWorktreeDirNames(root),
+            existingWorktreeBranchNames(root)
           );
           launchCwd = addWorktree(root, relPath, branch);
           const recordEntry: SessionRecordEntry = {

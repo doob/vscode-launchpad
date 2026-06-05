@@ -4,6 +4,12 @@ All notable changes to the **Launchpad** extension will be documented in this fi
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.9.2] - 2026-06-05
+
+### Fixed
+- **Worktree launches failed with "a branch named 'launchpad/…' already exists" and no worktree was created.** Removing a worktree left its `launchpad/<env>-<n>` branch behind, and the next launch picked the next free *directory* slot without checking whether that slot's *branch* already existed — so `git worktree add -b` aborted. `nextWorktreePaths` now skips any slot whose directory **or** branch name is taken, and `removeWorktree` deletes the throwaway `launchpad/*` branch so names free up for reuse.
+- Worktree path matching now resolves symlinks (e.g. macOS `/tmp` → `/private/tmp`), so branch cleanup and worktree lookups work when the repo lives under a symlinked path.
+
 ## [0.9.1] - 2026-06-05
 
 ### Fixed

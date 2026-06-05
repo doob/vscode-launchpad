@@ -21,13 +21,17 @@ export interface WorktreePaths {
 
 /**
  * Compute a unique worktree dir name / path / branch for an env, given the
- * dir names already present under .claude/worktrees. Uses a counter suffix so
- * it is deterministic and collision-safe. Fills the lowest available gap, so
- * existing dirs ["staging-1","staging-3"] yield "staging-2".
+ * dir names already present under .claude/worktrees AND the names of existing
+ * `launchpad/*` branches (the part after `launchpad/`). A slot is only free if
+ * neither its directory nor its branch is taken — otherwise `git worktree add
+ * -b` fails with "a branch named '…' already exists" when a branch was left
+ * behind by a removed worktree. Fills the lowest available gap, so existing
+ * dirs ["staging-1","staging-3"] yield "staging-2".
  */
 export function nextWorktreePaths(
   envName: string,
-  existingDirNames: string[]
+  existingDirNames: string[],
+  existingBranchNames: string[] = []
 ): WorktreePaths {
   const slug = slugify(envName);
   if (!slug) {
@@ -35,7 +39,7 @@ export function nextWorktreePaths(
       `Cannot create a worktree for environment "${envName}": its name has no usable characters for a directory/branch name.`
     );
   }
-  const taken = new Set(existingDirNames);
+  const taken = new Set([...existingDirNames, ...existingBranchNames]);
   let n = 1;
   while (taken.has(`${slug}-${n}`)) {
     n++;
@@ -99,6 +103,16 @@ export function reconcileRecord(
   );
 }
 
+/** Canonicalize a path for comparison, resolving symlinks when it exists
+ *  (e.g. macOS /tmp → /private/tmp, which `git worktree list` reports). */
+function canonical(p: string): string {
+  try {
+    return fs.realpathSync(p);
+  } catch {
+    return path.resolve(p);
+  }
+}
+
 /** Run git with args in repoRoot, returning stdout. Throws on non-zero exit. */
 function git(repoRoot: string, args: string[]): string {
   return execFileSync("git", args, {
@@ -130,6 +144,28 @@ export function existingWorktreeDirNames(repoRoot: string): string[] {
   }
 }
 
+/**
+ * Names (the part after `launchpad/`) of all existing `launchpad/*` branches.
+ * Used by nextWorktreePaths to avoid reusing a branch name whose worktree was
+ * removed but whose branch was left behind.
+ */
+export function existingWorktreeBranchNames(repoRoot: string): string[] {
+  try {
+    return git(repoRoot, [
+      "branch",
+      "--list",
+      "launchpad/*",
+      "--format=%(refname:short)",
+    ])
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0)
+      .map((b) => b.replace(/^launchpad\//, ""));
+  } catch {
+    return [];
+  }
+}
+
 /** Create a new worktree + branch off HEAD. Returns the absolute worktree path. */
 export function addWorktree(
   repoRoot: string,
@@ -147,9 +183,24 @@ export function listWorktrees(repoRoot: string): GitWorktree[] {
   );
 }
 
-/** Remove a worktree (force, to tolerate uncommitted changes). */
+/**
+ * Remove a worktree (force, to tolerate uncommitted changes) and delete its
+ * `launchpad/*` branch so the slot's branch name frees up for reuse. Leaving
+ * the branch behind is what caused `git worktree add -b` to later fail with
+ * "a branch named '…' already exists". Branch deletion is best-effort.
+ */
 export function removeWorktree(repoRoot: string, absPath: string): void {
+  const target = canonical(absPath);
+  const wt = listWorktrees(repoRoot).find((w) => canonical(w.path) === target);
   git(repoRoot, ["worktree", "remove", "--force", absPath]);
+  if (wt?.branch && wt.branch.startsWith("launchpad/")) {
+    try {
+      git(repoRoot, ["branch", "-D", wt.branch]);
+    } catch {
+      // Non-fatal: the worktree is gone, and nextWorktreePaths now tolerates a
+      // leftover branch anyway.
+    }
+  }
 }
 
 /** Glob patterns used to auto-detect env files when no explicit list is given. */
