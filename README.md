@@ -6,8 +6,6 @@
 
 VS Code extension that manages environment configurations for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) sessions. Define databases, credentials, API endpoints, MCP servers, scripts, and system prompts in YAML files — then launch a configured `claude` CLI session from the sidebar.
 
-![Launchpad launch sequence — multiple sessions in tabs; launch one and it runs pre-launch hooks, spins up an isolated git worktree, wires up MCP servers, and boots Claude already knowing your databases, APIs and secrets](images/launch-sequence.svg)
-
 ## Install
 
 ### From Open VSX (recommended)

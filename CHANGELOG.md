@@ -4,6 +4,11 @@ All notable changes to the **Launchpad** extension will be documented in this fi
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.9.4] - 2026-06-05
+
+### Changed
+- Documentation refresh: contributor guide (`CLAUDE.md`) now reflects the current module layout (editor webview, YAML editor helpers), the Docker Compose step in the launch flow, and the worktree file-seeding helpers.
+
 ## [0.9.3] - 2026-06-05
 
 ### Fixed
