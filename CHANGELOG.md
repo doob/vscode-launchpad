@@ -4,6 +4,14 @@ All notable changes to the **Launchpad** extension will be documented in this fi
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.9.3] - 2026-06-05
+
+### Fixed
+- **Slow worktree launch in large repos.** Env-file discovery passed a custom exclude to `findFiles`, which replaces VS Code's default excludes — so the search crawled every `node_modules` in a monorepo before the terminal opened. It now explicitly excludes `node_modules`/`.git`, keeping discovery fast.
+
+### Changed
+- Worktree creation now runs under a progress notification ("creating git worktree…" → "copying environment files…") so there's visible feedback instead of a frozen-looking click while git checks out the tree.
+
 ## [0.9.2] - 2026-06-05
 
 ### Fixed

@@ -602,11 +602,17 @@ async function seedWorktreeFiles(
     const autoDetect = copyGlobs === undefined || copyGlobs.length === 0;
     const globs = autoDetect ? ENV_FILE_GLOBS : copyGlobs;
 
+    // A custom exclude replaces VS Code's default excludes, so we must list the
+    // heavy directories ourselves — otherwise findFiles crawls every
+    // node_modules in a monorepo and the launch hangs for many seconds.
+    const exclude =
+      "{**/node_modules/**,**/.git/**,**/.claude/worktrees/**}";
+
     const found = new Set<string>();
     for (const glob of globs) {
       const uris = await vscode.workspace.findFiles(
         new vscode.RelativePattern(root, glob),
-        "**/.claude/worktrees/**"
+        exclude
       );
       for (const uri of uris) {
         const rel = path.relative(root, uri.fsPath);
@@ -749,21 +755,34 @@ async function launchSession(
         );
       } else {
         try {
-          const { relPath, branch } = nextWorktreePaths(
-            envConfig.name,
-            existingWorktreeDirNames(root),
-            existingWorktreeBranchNames(root)
+          launchCwd = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `Launchpad: preparing worktree for ${envConfig.name}`,
+              cancellable: false,
+            },
+            async (progress) => {
+              progress.report({ message: "creating git worktree…" });
+              const { relPath, branch } = nextWorktreePaths(
+                envConfig.name,
+                existingWorktreeDirNames(root),
+                existingWorktreeBranchNames(root)
+              );
+              const abs = addWorktree(root, relPath, branch);
+              const recordEntry: SessionRecordEntry = {
+                env: envConfig.name,
+                worktreePath: relPath,
+                branch,
+                createdAt: new Date().toISOString(),
+                originalEnvFile: path.relative(root, envFilePath!),
+              };
+              addRecordEntry(path.join(root, RECORD_FILE), recordEntry);
+
+              progress.report({ message: "copying environment files…" });
+              await seedWorktreeFiles(root, abs, envConfig.claude!.worktreeCopy);
+              return abs;
+            }
           );
-          launchCwd = addWorktree(root, relPath, branch);
-          const recordEntry: SessionRecordEntry = {
-            env: envConfig.name,
-            worktreePath: relPath,
-            branch,
-            createdAt: new Date().toISOString(),
-            originalEnvFile: path.relative(root, envFilePath!),
-          };
-          addRecordEntry(path.join(root, RECORD_FILE), recordEntry);
-          await seedWorktreeFiles(root, launchCwd, envConfig.claude.worktreeCopy);
         } catch (err: any) {
           vscode.window.showErrorMessage(
             `Failed to create git worktree: ${err.message}. Launching in the workspace root instead.`
