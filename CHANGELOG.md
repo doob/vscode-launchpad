@@ -4,6 +4,12 @@ All notable changes to the **Launchpad** extension will be documented in this fi
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.9.0] - 2026-06-05
+
+### Added
+- **Worktree env-file seeding** — `git worktree add` only checks out tracked files, so gitignored `.env` files (e.g. `apps/*/.env` in a monorepo) were missing from worktree sessions. Launchpad now copies them in automatically: by default it detects gitignored `.env` / `.env.*` files (skipping `.env.example`/`.sample`/`.template`) and copies each to the same relative path in the new worktree.
+- New `claude.worktreeCopy` setting to control exactly which untracked files are copied: provide a list of globs (VS Code glob syntax, repo-root-relative) to copy those instead of auto-detecting, or set it to `[]` to copy nothing. Copy failures warn but never abort the launch.
+
 ## [0.8.0] - 2026-06-04
 
 ### Added
